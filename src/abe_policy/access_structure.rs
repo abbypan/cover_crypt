@@ -245,26 +245,28 @@ impl AccessStructure {
             .map(|(ids, _, _)| ids)
             .collect::<Vec<_>>();
 
+            Ok(semantic_points)
+
         // The restricted space is Ω\π_c(Ω).
-        let restricted_space = self
-            .dimensions
-            .iter()
-            .filter(|(name, _)| !semantic_space.contains_key(*name))
-            .collect::<Vec<_>>();
+        // let restricted_space = self
+        //     .dimensions
+        //     .iter()
+        //     .filter(|(name, _)| !semantic_space.contains_key(*name))
+        //     .collect::<Vec<_>>();
 
-        // Now generate the complementary space by combining the
-        let complementary_points = combine(&restricted_space)
-            .into_iter()
-            .flat_map(|(prefix, _, _)| {
-                semantic_points.iter().map(move |suffix| {
-                    let mut prefix = prefix.clone();
-                    prefix.append(&mut suffix.clone());
-                    prefix
-                })
-            })
-            .collect::<Vec<_>>();
+        // // Now generate the complementary space by combining the
+        // let complementary_points = combine(&restricted_space)
+        //     .into_iter()
+        //     .flat_map(|(prefix, _, _)| {
+        //         semantic_points.iter().map(move |suffix| {
+        //             let mut prefix = prefix.clone();
+        //             prefix.append(&mut suffix.clone());
+        //             prefix
+        //         })
+        //     })
+        //     .collect::<Vec<_>>();
 
-        Ok(complementary_points)
+        // Ok(complementary_points)
     }
 
     /// Returns the rights in the complementary space of the given access policy.
@@ -286,12 +288,6 @@ impl AccessStructure {
         points.into_iter().map(Right::from_point).collect()
     }
 
-    /// Returns the rights of the points defined by the given access policy.
-    ///
-    /// Each conjunction of the associated DNF defines a unique right.
-    ///
-    /// # Error
-    /// Returns an error if the access policy is invalid.
     fn generate_associated_rights(&self, ap: &AccessPolicy) -> Result<HashSet<Right>, Error> {
         let dnf = ap.to_dnf();
         let len = dnf.len();

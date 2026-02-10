@@ -79,6 +79,7 @@ impl Dimension {
     }
 
     pub fn get_attribute(&self, attr_name: &Name) -> Option<&Attribute> {
+       
         match self {
             Self::Anarchy(attributes) => attributes.get(attr_name),
             Self::Hierarchy(attributes) => attributes.get(attr_name),
@@ -87,6 +88,18 @@ impl Dimension {
 
     /// Restricts the dimension to the attribute that are lower than the given one.
     pub fn restrict(&self, attr_name: Name) -> Result<Self, Error> {
+
+        if attr_name == "*" {
+               match self {
+                Self::Hierarchy(attributes) => {
+                    return Ok(Self::Hierarchy(attributes.clone()));
+                            }
+                Self::Anarchy(attributes) => {
+                    return Ok(Self::Anarchy(attributes.clone()));
+                         }
+            }
+        } else {
+
         let params = self
             .get_attribute(&attr_name)
             .ok_or_else(|| Error::AttributeNotFound(attr_name.to_string()))?
@@ -104,6 +117,7 @@ impl Dimension {
             }
             Self::Anarchy(_) => Ok(Self::Anarchy(HashMap::from_iter([(attr_name, params)]))),
         }
+    }
     }
 
     /// Adds a new attribute to this dimension with the provided properties.
