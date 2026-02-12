@@ -307,8 +307,8 @@ fn bench_classical_encapsulation(c: &mut Criterion) {
 
     {
         let mut group = c.benchmark_group("Classic encapsulation");
-        for (enc_ap, cnt_enc) in ENC_APS {
-            let _ = gen_enc!(cc, mpk, enc_ap, cnt_enc);
+        for (enc_ap, _cnt_enc) in ENC_APS {
+            let _ = gen_enc!(cc, mpk, enc_ap, _cnt_enc);
             let eap = AccessPolicy::parse(enc_ap).unwrap();
             // 使用enc_ap作为benchmark名称的一部分以确保唯一性
             let bench_name = if enc_ap.is_empty() {
@@ -329,15 +329,15 @@ fn bench_classical_decapsulation(c: &mut Criterion) {
 
     {
         let mut group = c.benchmark_group("Decapsulation");
-        for (enc_ap, cnt_enc) in ENC_APS {
+        for (enc_ap, _cnt_enc) in ENC_APS {
             let eap = AccessPolicy::parse(enc_ap).unwrap();
-            for (usk_ap, cnt_secret) in USK_APS {
+            for (usk_ap, _cnt_secret) in USK_APS {
                 let uap = AccessPolicy::parse(usk_ap).unwrap();
 
-                let usk = gen_usk!(cc, msk, usk_ap, cnt_secret);
+                let _usk = gen_usk!(cc, msk, usk_ap, _cnt_secret);
 
-                let (k, enc) = gen_enc!(cc, mpk, enc_ap, cnt_enc);
-              //  assert_eq!(Some(k), cc.decaps(&usk, &enc).unwrap());
+                let (_k, _enc) = gen_enc!(cc, mpk, enc_ap, _cnt_enc);
+                //  assert_eq!(Some(k), cc.decaps(&usk, &enc).unwrap());
 
                 // 使用enc_ap和usk_ap作为benchmark名称以确保唯一性
                 let enc_name = if enc_ap.is_empty() {
@@ -376,9 +376,9 @@ fn bench_hybridized_encapsulation(c: &mut Criterion) {
 
     {
         let mut group = c.benchmark_group("Hybridized encapsulation");
-        for (enc_ap, cnt_enc) in ENC_APS {
+        for (enc_ap, _cnt_enc) in ENC_APS {
             let eap = AccessPolicy::parse(enc_ap).unwrap();
-            let _ = gen_enc!(cc, mpk, enc_ap, cnt_enc);
+            let _ = gen_enc!(cc, mpk, enc_ap, _cnt_enc);
             let bench_name = if enc_ap.is_empty() {
                 "empty".to_string()
             } else {
@@ -397,12 +397,12 @@ fn bench_hybridized_decapsulation(c: &mut Criterion) {
 
     {
         let mut group = c.benchmark_group("Hybridized Decapsulation");
-        for (enc_ap, enc_cnt) in ENC_APS {
+        for (enc_ap, _enc_cnt) in ENC_APS {
             let eap = AccessPolicy::parse(enc_ap).unwrap();
-            for (usk_ap, usk_cnt) in USK_APS {
+            for (usk_ap, _usk_cnt) in USK_APS {
                 let uap = AccessPolicy::parse(usk_ap).unwrap();
-                let usk = gen_usk!(cc, msk, usk_ap, usk_cnt);
-                let (k, enc) = gen_enc!(cc, mpk, enc_ap, enc_cnt);
+                let usk = gen_usk!(cc, msk, usk_ap, _usk_cnt);
+                let (k, enc) = gen_enc!(cc, mpk, enc_ap, _enc_cnt);
                 assert_eq!(Some(k), cc.decaps(&usk, &enc).unwrap());
 
                 let enc_name = if enc_ap.is_empty() {
@@ -441,7 +441,7 @@ fn bench_classical_encryption(c: &mut Criterion) {
 
     {
         let mut group = c.benchmark_group("Classic encryption");
-        for (enc_ap, cnt_enc) in ENC_APS {
+        for (enc_ap, _cnt_enc) in ENC_APS {
             let eap = AccessPolicy::parse(enc_ap).unwrap();
             let _ = PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::encrypt(
                 &cc,
@@ -476,12 +476,12 @@ fn bench_classical_decryption(c: &mut Criterion) {
 
     {
         let mut group = c.benchmark_group("Classic decryption");
-        for (enc_ap, cnt_enc) in ENC_APS {
+        for (enc_ap, _cnt_enc) in ENC_APS {
             let eap = AccessPolicy::parse(enc_ap).unwrap();
-            for (usk_ap, cnt_secret) in USK_APS {
+            for (usk_ap, _cnt_secret) in USK_APS {
                 let uap = AccessPolicy::parse(usk_ap).unwrap();
 
-                let usk = gen_usk!(cc, msk, usk_ap, cnt_secret);
+                let usk = gen_usk!(cc, msk, usk_ap, _cnt_secret);
                 let ctx = PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::encrypt(
                     &cc,
                     &mpk,
@@ -542,7 +542,7 @@ fn bench_hybridized_encryption(c: &mut Criterion) {
 
     {
         let mut group = c.benchmark_group("Hybridized encryption");
-        for (enc_ap, cnt_enc) in ENC_APS {
+        for (enc_ap, _cnt_enc) in ENC_APS {
             let eap = AccessPolicy::parse(enc_ap).unwrap();
             let _ = PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::encrypt(
                 &cc,
@@ -577,11 +577,11 @@ fn bench_hybridized_decryption(c: &mut Criterion) {
 
     {
         let mut group = c.benchmark_group("Hybridized decryption");
-        for (enc_ap, enc_cnt) in ENC_APS {
+        for (enc_ap, _enc_cnt) in ENC_APS {
             let eap = AccessPolicy::parse(enc_ap).unwrap();
-            for (usk_ap, usk_cnt) in USK_APS {
+            for (usk_ap, _usk_cnt) in USK_APS {
                 let uap = AccessPolicy::parse(usk_ap).unwrap();
-                let usk = gen_usk!(cc, msk, usk_ap, usk_cnt);
+                let usk = gen_usk!(cc, msk, usk_ap, _usk_cnt);
                 let ctx = PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::encrypt(
                     &cc,
                     &mpk,
@@ -794,7 +794,7 @@ fn collect_benchmark_results_to_csv() -> Result<(), Box<dyn std::error::Error>> 
     Ok(())
 }
 
-fn bench_collect_results(c: &mut Criterion) {
+fn bench_collect_results(_c: &mut Criterion) {
     if let Err(e) = collect_benchmark_results_to_csv() {
         eprintln!("Error collecting benchmark results: {}", e);
     }
