@@ -37,6 +37,9 @@ required-features = ["test-utils"]
 name = "runme"
 required-features = ["test-utils"]
 
+[[example]]
+name = "star"
+
 [features]
 default = ["mlkem-512", "curve25519"]
 mlkem-512 = []

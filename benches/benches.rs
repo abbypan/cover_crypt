@@ -279,6 +279,11 @@ const USK_APS: [(&str, usize); 79] = [
 
 const PLAINTEXT: &[u8] = b"testing encryption/decryption benchmark";
 
+/// enc_ap uses hybridized attributes (Security::HIGH or Security::*) => hybridized, else classical.
+fn is_hybridized_enc_ap(enc_ap: &str) -> bool {
+    enc_ap.contains("Security::HIGH") || enc_ap.contains("Security::*")
+}
+
 macro_rules! gen_enc {
     ($cc:ident, $mpk:ident, $ap:ident, $cnt:ident) => {{
         let (k, enc) = $cc
@@ -403,7 +408,10 @@ fn bench_hybridized_decapsulation(c: &mut Criterion) {
                 let uap = AccessPolicy::parse(usk_ap).unwrap();
                 let usk = gen_usk!(cc, msk, usk_ap, _usk_cnt);
                 let (k, enc) = gen_enc!(cc, mpk, enc_ap, _enc_cnt);
-                assert_eq!(Some(k), cc.decaps(&usk, &enc).unwrap());
+                // Skip when user key cannot decrypt this enc_ap (policy not satisfied)
+                if cc.decaps(&usk, &enc).unwrap().is_none() {
+                    continue;
+                }
 
                 let enc_name = if enc_ap.is_empty() {
                     "empty".to_string()
@@ -435,203 +443,208 @@ fn bench_hybridized_decapsulation(c: &mut Criterion) {
     }
 }
 
+/// Classical encryption benchmark: enc_ap that use only classic attributes.
 fn bench_classical_encryption(c: &mut Criterion) {
     let cc = Covercrypt::default();
     let (_, mpk) = setup_with_custom_structure(&cc).unwrap();
 
-    {
-        let mut group = c.benchmark_group("Classic encryption");
-        for (enc_ap, _cnt_enc) in ENC_APS {
-            let eap = AccessPolicy::parse(enc_ap).unwrap();
-            let _ = PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::encrypt(
-                &cc,
-                &mpk,
-                &eap,
-                PLAINTEXT,
-            )
-            .unwrap();
-            let bench_name = if enc_ap.is_empty() {
-                "empty".to_string()
-            } else {
-                enc_ap.replace("::", "_").replace(" && ", "_").replace(" ", "")
-            };
-            group.bench_function(format!("{}", bench_name), |b| {
-                b.iter(|| {
-                    PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::encrypt(
-                        &cc,
-                        &mpk,
-                        &eap,
-                        PLAINTEXT,
-                    )
-                    .unwrap()
-                })
-            });
-        }
-    }
-}
-
-fn bench_classical_decryption(c: &mut Criterion) {
-    let cc = Covercrypt::default();
-    let (mut msk, mpk) = setup_with_custom_structure(&cc).unwrap();
-
-    {
-        let mut group = c.benchmark_group("Classic decryption");
-        for (enc_ap, _cnt_enc) in ENC_APS {
-            let eap = AccessPolicy::parse(enc_ap).unwrap();
-            for (usk_ap, _cnt_secret) in USK_APS {
-                let uap = AccessPolicy::parse(usk_ap).unwrap();
-
-                let usk = gen_usk!(cc, msk, usk_ap, _cnt_secret);
-                let ctx = PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::encrypt(
+    let mut group = c.benchmark_group("Classical encryption");
+    for (enc_ap, _cnt_enc) in ENC_APS.iter().filter(|(ap, _)| !is_hybridized_enc_ap(ap)) {
+        let eap = AccessPolicy::parse(enc_ap).unwrap();
+        let _ = PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::encrypt(
+            &cc,
+            &mpk,
+            &eap,
+            PLAINTEXT,
+        )
+        .unwrap();
+        let bench_name = if enc_ap.is_empty() {
+            "empty".to_string()
+        } else {
+            enc_ap.replace("::", "_").replace(" && ", "_").replace(" ", "")
+        };
+        group.bench_function(bench_name, |b| {
+            b.iter(|| {
+                PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::encrypt(
                     &cc,
                     &mpk,
                     &eap,
                     PLAINTEXT,
                 )
-                .unwrap();
-                assert!(PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::decrypt(
-                    &cc, &usk, &ctx
-                )
                 .unwrap()
-                .is_some());
-
-                let enc_name = if enc_ap.is_empty() {
-                    "empty".to_string()
-                } else {
-                    enc_ap.replace("::", "_").replace(" && ", "_").replace(" ", "")
-                };
-                let usk_name = if usk_ap.is_empty() {
-                    "empty".to_string()
-                } else {
-                    usk_ap.replace("::", "_").replace(" && ", "_").replace(" ", "")
-                };
-                group.bench_function(
-                    format!("enc_{}_usk_{}", enc_name, usk_name),
-                    |b| {
-                        b.iter_batched(
-                            || {
-                                (
-                                    cc.generate_user_secret_key(&mut msk, &uap).unwrap(),
-                                    PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::encrypt(
-                                        &cc,
-                                        &mpk,
-                                        &eap,
-                                        PLAINTEXT,
-                                    )
-                                    .unwrap(),
-                                )
-                            },
-                            |(usk, ctx)| {
-                                PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::decrypt(
-                                    &cc, &usk, &ctx,
-                                )
-                                .unwrap()
-                            },
-                            BatchSize::SmallInput,
-                        )
-                    },
-                );
-            }
-        }
+            })
+        });
     }
 }
 
+/// Hybridized encryption benchmark: enc_ap that use Security::HIGH or Security::*.
 fn bench_hybridized_encryption(c: &mut Criterion) {
     let cc = Covercrypt::default();
     let (_, mpk) = setup_with_custom_structure(&cc).unwrap();
 
-    {
-        let mut group = c.benchmark_group("Hybridized encryption");
-        for (enc_ap, _cnt_enc) in ENC_APS {
-            let eap = AccessPolicy::parse(enc_ap).unwrap();
-            let _ = PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::encrypt(
+    let mut group = c.benchmark_group("Hybridized encryption");
+    for (enc_ap, _cnt_enc) in ENC_APS.iter().filter(|(ap, _)| is_hybridized_enc_ap(ap)) {
+        let eap = AccessPolicy::parse(enc_ap).unwrap();
+        let _ = PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::encrypt(
+            &cc,
+            &mpk,
+            &eap,
+            PLAINTEXT,
+        )
+        .unwrap();
+        let bench_name = if enc_ap.is_empty() {
+            "empty".to_string()
+        } else {
+            enc_ap.replace("::", "_").replace(" && ", "_").replace(" ", "")
+        };
+        group.bench_function(bench_name, |b| {
+            b.iter(|| {
+                PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::encrypt(
+                    &cc,
+                    &mpk,
+                    &eap,
+                    PLAINTEXT,
+                )
+                .unwrap()
+            })
+        });
+    }
+}
+
+/// Classical decryption benchmark: enc_ap that use only classic attributes.
+fn bench_classical_decryption(c: &mut Criterion) {
+    let cc = Covercrypt::default();
+    let (mut msk, mpk) = setup_with_custom_structure(&cc).unwrap();
+
+    let mut group = c.benchmark_group("Classical decryption");
+    for (enc_ap, _cnt_enc) in ENC_APS.iter().filter(|(ap, _)| !is_hybridized_enc_ap(ap)) {
+        let eap = AccessPolicy::parse(enc_ap).unwrap();
+        for (usk_ap, _cnt_secret) in USK_APS.iter() {
+            let uap = AccessPolicy::parse(usk_ap).unwrap();
+
+            let usk = gen_usk!(cc, msk, usk_ap, _cnt_secret);
+            let ctx = PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::encrypt(
                 &cc,
                 &mpk,
                 &eap,
                 PLAINTEXT,
             )
             .unwrap();
-            let bench_name = if enc_ap.is_empty() {
+            // Skip when user key cannot decrypt this enc_ap (policy not satisfied)
+            if PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::decrypt(
+                &cc, &usk, &ctx,
+            )
+            .unwrap()
+            .is_none()
+            {
+                continue;
+            }
+
+            let enc_name = if enc_ap.is_empty() {
                 "empty".to_string()
             } else {
                 enc_ap.replace("::", "_").replace(" && ", "_").replace(" ", "")
             };
-            group.bench_function(format!("{}", bench_name), |b| {
-                b.iter(|| {
-                    PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::encrypt(
-                        &cc,
-                        &mpk,
-                        &eap,
-                        PLAINTEXT,
+            let usk_name = if usk_ap.is_empty() {
+                "empty".to_string()
+            } else {
+                usk_ap.replace("::", "_").replace(" && ", "_").replace(" ", "")
+            };
+            group.bench_function(
+                format!("enc_{}_usk_{}", enc_name, usk_name),
+                |b| {
+                    b.iter_batched(
+                        || {
+                            (
+                                cc.generate_user_secret_key(&mut msk, &uap).unwrap(),
+                                PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::encrypt(
+                                    &cc,
+                                    &mpk,
+                                    &eap,
+                                    PLAINTEXT,
+                                )
+                                .unwrap(),
+                            )
+                        },
+                        |(usk, ctx)| {
+                            PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::decrypt(
+                                &cc, &usk, &ctx,
+                            )
+                            .unwrap()
+                        },
+                        BatchSize::SmallInput,
                     )
-                    .unwrap()
-                })
-            });
+                },
+            );
         }
     }
 }
 
+/// Hybridized decryption benchmark: enc_ap that use Security::HIGH or Security::*.
 fn bench_hybridized_decryption(c: &mut Criterion) {
     let cc = Covercrypt::default();
     let (mut msk, mpk) = setup_with_custom_structure(&cc).unwrap();
 
-    {
-        let mut group = c.benchmark_group("Hybridized decryption");
-        for (enc_ap, _enc_cnt) in ENC_APS {
-            let eap = AccessPolicy::parse(enc_ap).unwrap();
-            for (usk_ap, _usk_cnt) in USK_APS {
-                let uap = AccessPolicy::parse(usk_ap).unwrap();
-                let usk = gen_usk!(cc, msk, usk_ap, _usk_cnt);
-                let ctx = PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::encrypt(
-                    &cc,
-                    &mpk,
-                    &eap,
-                    PLAINTEXT,
-                )
-                .unwrap();
-                assert!(PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::decrypt(
-                    &cc, &usk, &ctx
-                )
-                .unwrap()
-                .is_some());
+    let mut group = c.benchmark_group("Hybridized decryption");
+    for (enc_ap, _cnt_enc) in ENC_APS.iter().filter(|(ap, _)| is_hybridized_enc_ap(ap)) {
+        let eap = AccessPolicy::parse(enc_ap).unwrap();
+        for (usk_ap, _cnt_secret) in USK_APS.iter() {
+            let uap = AccessPolicy::parse(usk_ap).unwrap();
 
-                let enc_name = if enc_ap.is_empty() {
-                    "empty".to_string()
-                } else {
-                    enc_ap.replace("::", "_").replace(" && ", "_").replace(" ", "")
-                };
-                let usk_name = if usk_ap.is_empty() {
-                    "empty".to_string()
-                } else {
-                    usk_ap.replace("::", "_").replace(" && ", "_").replace(" ", "")
-                };
-                group.bench_function(
-                    format!("enc_{}_usk_{}", enc_name, usk_name),
-                    |b| {
-                        b.iter_batched(
-                            || {
-                                (
-                                    cc.generate_user_secret_key(&mut msk, &uap).unwrap(),
-                                    PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::encrypt(
-                                        &cc,
-                                        &mpk,
-                                        &eap,
-                                        PLAINTEXT,
-                                    )
-                                    .unwrap(),
-                                )
-                            },
-                            |(usk, ctx)| {
-                                PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::decrypt(
-                                    &cc, &usk, &ctx,
-                                )
-                                .unwrap()
-                            },
-                            BatchSize::SmallInput,
-                        )
-                    },
-                );
+            let usk = gen_usk!(cc, msk, usk_ap, _cnt_secret);
+            let ctx = PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::encrypt(
+                &cc,
+                &mpk,
+                &eap,
+                PLAINTEXT,
+            )
+            .unwrap();
+            // Skip when user key cannot decrypt this enc_ap (policy not satisfied)
+            if PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::decrypt(
+                &cc, &usk, &ctx,
+            )
+            .unwrap()
+            .is_none()
+            {
+                continue;
             }
+
+            let enc_name = if enc_ap.is_empty() {
+                "empty".to_string()
+            } else {
+                enc_ap.replace("::", "_").replace(" && ", "_").replace(" ", "")
+            };
+            let usk_name = if usk_ap.is_empty() {
+                "empty".to_string()
+            } else {
+                usk_ap.replace("::", "_").replace(" && ", "_").replace(" ", "")
+            };
+            group.bench_function(
+                format!("enc_{}_usk_{}", enc_name, usk_name),
+                |b| {
+                    b.iter_batched(
+                        || {
+                            (
+                                cc.generate_user_secret_key(&mut msk, &uap).unwrap(),
+                                PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::encrypt(
+                                    &cc,
+                                    &mpk,
+                                    &eap,
+                                    PLAINTEXT,
+                                )
+                                .unwrap(),
+                            )
+                        },
+                        |(usk, ctx)| {
+                            PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::decrypt(
+                                &cc, &usk, &ctx,
+                            )
+                            .unwrap()
+                        },
+                        BatchSize::SmallInput,
+                    )
+                },
+            );
         }
     }
 }
@@ -639,158 +652,107 @@ fn bench_hybridized_decryption(c: &mut Criterion) {
 // ... rest of the file remains the same ...
 // ... existing code up to line 572 ...
 
-// 收集所有benchmark结果并写入CSV文件
+const CSV_ITERATIONS: u32 = 1000;
+
+/// One row per (enc_ap, user_ap). Columns: enc_ap, user_ap, type (classical|hybridized), encryption, decryption, decryption_result (success|fail).
+/// Progress is printed to stderr.
 fn collect_benchmark_results_to_csv() -> Result<(), Box<dyn std::error::Error>> {
+    use std::io::{stderr, Write as _};
+
+    let total_enc = ENC_APS.len();
+    let total_usk = USK_APS.len();
+    let total_rows = total_enc * total_usk;
+
+    eprintln!("Writing benchmark results to benchmark_results.csv");
+    eprintln!("  Total: {} enc_ap × {} user_ap = {} rows", total_enc, total_usk, total_rows);
+
     let mut file = File::create("benchmark_results.csv")?;
-    writeln!(file, "benchmark_type,enc_ap,uap,time_ns")?;
+    let header = "enc_ap,user_ap,type,encryption,decryption,decryption_result";
+    writeln!(file, "{}", header)?;
+    println!("{}", header);
 
     let cc = Covercrypt::default();
     let (mut msk, mpk) = setup_with_custom_structure(&cc)?;
 
-    // Classical Encapsulation
-    for (enc_ap, _cnt_enc) in ENC_APS {
-        let eap = AccessPolicy::parse(enc_ap).unwrap();
+    // Encryption time per enc_ap (same for all user_ap in that row)
+    eprintln!("  Phase 1/2: measuring encryption times ({} enc_ap)...", total_enc);
+    let mut enc_times_ns = Vec::with_capacity(total_enc);
+    for (i, (enc_ap, _)) in ENC_APS.iter().enumerate() {
+        let eap = AccessPolicy::parse(*enc_ap).unwrap();
         let start = std::time::Instant::now();
-        for _ in 0..1000 {
-            let _ = cc.encaps(&mpk, &eap).unwrap();
-        }
-        let elapsed = start.elapsed();
-        let avg_ns = elapsed.as_nanos() / 1000;
-        writeln!(file, "Classical Encapsulation,\"{}\",\"\",{}", enc_ap, avg_ns)?;
-    }
-
-    // Classical Decapsulation
-    for (enc_ap, _cnt_enc) in ENC_APS {
-        let eap = AccessPolicy::parse(enc_ap).unwrap();
-        for (usk_ap, _cnt_secret) in USK_APS {
-            let uap = AccessPolicy::parse(usk_ap).unwrap();
-            let usk = cc.generate_user_secret_key(&mut msk, &uap).unwrap();
-            let (_, enc) = cc.encaps(&mpk, &eap).unwrap();
-            
-            let start = std::time::Instant::now();
-            for _ in 0..1000 {
-                let _ = cc.decaps(&usk, &enc).unwrap();
-            }
-            let elapsed = start.elapsed();
-            let avg_ns = elapsed.as_nanos() / 1000;
-            writeln!(file, "Classical Decapsulation,\"{}\",\"{}\",{}", enc_ap, usk_ap, avg_ns)?;
-        }
-    }
-
-    // Hybridized Encapsulation
-    for (enc_ap, _cnt_enc) in ENC_APS {
-        let eap = AccessPolicy::parse(enc_ap).unwrap();
-        let start = std::time::Instant::now();
-        for _ in 0..1000 {
-            let _ = cc.encaps(&mpk, &eap).unwrap();
-        }
-        let elapsed = start.elapsed();
-        let avg_ns = elapsed.as_nanos() / 1000;
-        writeln!(file, "Hybridized Encapsulation,\"{}\",\"\",{}", enc_ap, avg_ns)?;
-    }
-
-    // Hybridized Decapsulation
-    for (enc_ap, _enc_cnt) in ENC_APS {
-        let eap = AccessPolicy::parse(enc_ap).unwrap();
-        for (usk_ap, _usk_cnt) in USK_APS {
-            let uap = AccessPolicy::parse(usk_ap).unwrap();
-            let usk = cc.generate_user_secret_key(&mut msk, &uap).unwrap();
-            let (_, enc) = cc.encaps(&mpk, &eap).unwrap();
-            
-            let start = std::time::Instant::now();
-            for _ in 0..1000 {
-                let _ = cc.decaps(&usk, &enc).unwrap();
-            }
-            let elapsed = start.elapsed();
-            let avg_ns = elapsed.as_nanos() / 1000;
-            writeln!(file, "Hybridized Decapsulation,\"{}\",\"{}\",{}", enc_ap, usk_ap, avg_ns)?;
-        }
-    }
-
-    // Classical Encryption
-    for (enc_ap, _cnt_enc) in ENC_APS {
-        let eap = AccessPolicy::parse(enc_ap).unwrap();
-        let start = std::time::Instant::now();
-        for _ in 0..1000 {
+        for _ in 0..CSV_ITERATIONS {
             let _ = PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::encrypt(
-                &cc,
-                &mpk,
-                &eap,
-                PLAINTEXT,
-            ).unwrap();
+                &cc, &mpk, &eap, PLAINTEXT,
+            )
+            .unwrap();
         }
-        let elapsed = start.elapsed();
-        let avg_ns = elapsed.as_nanos() / 1000;
-        writeln!(file, "Classical Encryption,\"{}\",\"\",{}", enc_ap, avg_ns)?;
+        enc_times_ns.push((start.elapsed().as_nanos() / CSV_ITERATIONS as u128) as u64);
+        eprintln!("    encryption {} / {}", i + 1, total_enc);
+        let _ = stderr().flush();
     }
 
-    // Classical Decryption
-    for (enc_ap, _cnt_enc) in ENC_APS {
-        let eap = AccessPolicy::parse(enc_ap).unwrap();
-        for (usk_ap, _cnt_secret) in USK_APS {
-            let uap = AccessPolicy::parse(usk_ap).unwrap();
+    // Decryption times and CSV rows
+    eprintln!("  Phase 2/2: measuring decryption & writing CSV ({} rows)...", total_rows);
+    let mut rows_written = 0usize;
+    for (enc_idx, (enc_ap, _cnt_enc)) in ENC_APS.iter().enumerate() {
+        let eap = AccessPolicy::parse(*enc_ap).unwrap();
+        let encryption_ns = enc_times_ns[enc_idx];
+        let row_type = if is_hybridized_enc_ap(enc_ap) {
+            "hybridized"
+        } else {
+            "classical"
+        };
+
+        for (usk_ap, _cnt_secret) in USK_APS.iter() {
+            let uap = AccessPolicy::parse(*usk_ap).unwrap();
             let usk = cc.generate_user_secret_key(&mut msk, &uap).unwrap();
             let ctx = PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::encrypt(
                 &cc,
                 &mpk,
                 &eap,
                 PLAINTEXT,
-            ).unwrap();
-            
+            )
+            .unwrap();
+
+            let decryption_result = if PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::decrypt(
+                &cc, &usk, &ctx,
+            )
+            .unwrap()
+            .is_some()
+            {
+                "success"
+            } else {
+                "fail"
+            };
+
             let start = std::time::Instant::now();
-            for _ in 0..1000 {
+            for _ in 0..CSV_ITERATIONS {
                 let _ = PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::decrypt(
-                    &cc, &usk, &ctx
-                ).unwrap();
+                    &cc, &usk, &ctx,
+                )
+                .unwrap();
             }
-            let elapsed = start.elapsed();
-            let avg_ns = elapsed.as_nanos() / 1000;
-            writeln!(file, "Classical Decryption,\"{}\",\"{}\",{}", enc_ap, usk_ap, avg_ns)?;
+            let decryption_ns =
+                (start.elapsed().as_nanos() / CSV_ITERATIONS as u128) as u64;
+
+            let line = format!(
+                "\"{}\",\"{}\",{},{},{},{}",
+                enc_ap.replace('"', "\"\""),
+                usk_ap.replace('"', "\"\""),
+                row_type,
+                encryption_ns,
+                decryption_ns,
+                decryption_result
+            );
+            writeln!(file, "{}", line)?;
+            println!("{}", line);
+            rows_written += 1;
         }
+        eprintln!("    enc_ap {} / {} (rows {})", enc_idx + 1, total_enc, rows_written);
+        let _ = stderr().flush();
     }
 
-    // Hybridized Encryption
-    for (enc_ap, _cnt_enc) in ENC_APS {
-        let eap = AccessPolicy::parse(enc_ap).unwrap();
-        let start = std::time::Instant::now();
-        for _ in 0..1000 {
-            let _ = PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::encrypt(
-                &cc,
-                &mpk,
-                &eap,
-                PLAINTEXT,
-            ).unwrap();
-        }
-        let elapsed = start.elapsed();
-        let avg_ns = elapsed.as_nanos() / 1000;
-        writeln!(file, "Hybridized Encryption,\"{}\",\"\",{}", enc_ap, avg_ns)?;
-    }
-
-    // Hybridized Decryption
-    for (enc_ap, _enc_cnt) in ENC_APS {
-        let eap = AccessPolicy::parse(enc_ap).unwrap();
-        for (usk_ap, _usk_cnt) in USK_APS {
-            let uap = AccessPolicy::parse(usk_ap).unwrap();
-            let usk = cc.generate_user_secret_key(&mut msk, &uap).unwrap();
-            let ctx = PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::encrypt(
-                &cc,
-                &mpk,
-                &eap,
-                PLAINTEXT,
-            ).unwrap();
-            
-            let start = std::time::Instant::now();
-            for _ in 0..1000 {
-                let _ = PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::decrypt(
-                    &cc, &usk, &ctx
-                ).unwrap();
-            }
-            let elapsed = start.elapsed();
-            let avg_ns = elapsed.as_nanos() / 1000;
-            writeln!(file, "Hybridized Decryption,\"{}\",\"{}\",{}", enc_ap, usk_ap, avg_ns)?;
-        }
-    }
-
+    eprintln!("Done. {} rows written to benchmark_results.csv", rows_written);
     Ok(())
 }
 
@@ -802,15 +764,15 @@ fn bench_collect_results(_c: &mut Criterion) {
 
 criterion_group!(
     name = benches;
-    config = Criterion::default().sample_size(20);
+    config = Criterion::default().sample_size(2000);
     targets =
     bench_classical_encapsulation,
     bench_classical_decapsulation,
     bench_hybridized_encapsulation,
     bench_hybridized_decapsulation,
     bench_classical_encryption,
-    bench_classical_decryption,
     bench_hybridized_encryption,
+    bench_classical_decryption,
     bench_hybridized_decryption,
     bench_collect_results
 );
