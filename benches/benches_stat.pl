@@ -48,7 +48,7 @@ my @columns = qw/enc_ap user_ap type encryption decryption decryption_result/;
 
 my @etsi_columns = qw/etsi_enc_ap etsi_user_ap etsi_type etsi_encryption etsi_decryption etsi_decryption_result/;
 
-my @final_rows = ([@columns, @etsi_columns]);
+my @final_rows = ([@columns, @etsi_columns, "etsi_lp_eq_flag"]);
 
 for my $i (0 .. $#$rows) {
     my $row = $rows->[$i];
@@ -56,8 +56,10 @@ for my $i (0 .. $#$rows) {
     my $etsi_user_ap = $row->{"etsi_user_ap"};
 
 my $etsi_row = undef;
+my $etsi_lp_eq_flag = 0;
     if($user_ap eq $etsi_user_ap) {
         $etsi_row = $row;
+        $etsi_lp_eq_flag = 1;
     }else{
         my @extract_rows = grep { 
             $_->{"enc_ap"} eq $row->{"enc_ap"} &&
@@ -70,7 +72,7 @@ my $etsi_row = undef;
         }
     }
     if(defined $etsi_row) {
-        push @final_rows, [ @{$row}{@columns}, @{$etsi_row}{@columns} ];
+        push @final_rows, [ @{$row}{@columns}, @{$etsi_row}{@columns}, $etsi_lp_eq_flag ];
     }
 }
 
