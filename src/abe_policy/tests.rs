@@ -74,7 +74,7 @@ fn test_edit_anarchic_attributes() {
     let mut structure = AccessStructure::new();
     gen_structure(&mut structure, false).unwrap();
 
-    assert_eq!(structure.attributes().count(), 7);
+    assert_eq!(structure.attributes().count(), 9);
 
     // Try renaming Research to already used name MKG
     assert!(structure
@@ -95,14 +95,14 @@ fn test_edit_anarchic_attributes() {
         .map(|a| a.name)
         .collect();
 
-    assert!(order.len() == 2);
+    assert_eq!(order, ["LOW", "TOP", "$"]);
 
     // Add new attribute Sales
     let new_attr = QualifiedAttribute::new("DPT", "Sales");
     assert!(structure
         .add_attribute(new_attr.clone(), EncryptionHint::Classic, None)
         .is_ok());
-    assert_eq!(structure.attributes().count(), 8);
+    assert_eq!(structure.attributes().count(), 10);
 
     // Try adding already existing attribute HR
     let duplicate_attr = QualifiedAttribute::new("DPT", "HR");
@@ -119,7 +119,7 @@ fn test_edit_anarchic_attributes() {
     // Remove research attribute
     let delete_attr = QualifiedAttribute::new("DPT", "Research");
     structure.del_attribute(&delete_attr).unwrap();
-    assert_eq!(structure.attributes().count(), 7);
+    assert_eq!(structure.attributes().count(), 9);
 
     // Duplicate remove
     assert!(structure.del_attribute(&delete_attr).is_err());
@@ -187,6 +187,10 @@ fn test_edit_hierarchic_attributes() {
                 dimension: "SEC".to_string(),
                 name: "TOP".to_string(),
             },
+            QualifiedAttribute {
+                dimension: "SEC".to_string(),
+                name: "$".to_string(),
+            },
         ]
     );
 
@@ -226,6 +230,10 @@ fn test_edit_hierarchic_attributes() {
                 dimension: "SEC".to_string(),
                 name: "TOP".to_string(),
             },
+            QualifiedAttribute {
+                dimension: "SEC".to_string(),
+                name: "$".to_string(),
+            },
         ]
     );
 
@@ -254,6 +262,10 @@ fn test_edit_hierarchic_attributes() {
             QualifiedAttribute {
                 dimension: "SEC".to_string(),
                 name: "TOP".to_string(),
+            },
+            QualifiedAttribute {
+                dimension: "SEC".to_string(),
+                name: "$".to_string(),
             },
         ]
     );
@@ -287,6 +299,10 @@ fn test_edit_hierarchic_attributes() {
             QualifiedAttribute {
                 dimension: "SEC".to_string(),
                 name: "TOP".to_string(),
+            },
+            QualifiedAttribute {
+                dimension: "SEC".to_string(),
+                name: "$".to_string(),
             },
         ]
     );

@@ -5,7 +5,6 @@ use crate::{
         AccessPolicy, Attribute, AttributeStatus, Dimension, EncryptionHint, QualifiedAttribute,
         Right,
     },
-    data_struct::Dict,
     Error,
 };
 
@@ -36,6 +35,18 @@ impl AccessStructure {
         self.generate_associated_rights(ap)
     }
 
+    fn next_attribute_id(&self) -> Result<usize, Error> {
+        self.dimensions
+            .values()
+            .filter_map(Dimension::next_attribute_id)
+            .max()
+            .map_or(Ok(0), |id| {
+                id.checked_add(1).ok_or_else(|| {
+                    Error::OperationNotPermitted("attribute identifier space exhausted".to_string())
+                })
+            })
+    }
+
     /// Add an anarchic dimension with the given name to the access structure.
     ///
     /// Requires USK refresh
@@ -44,10 +55,11 @@ impl AccessStructure {
     /// Only refreshed keys can decrypt for an access policy belonging to the
     /// semantic space of the new dimension.
     pub fn add_anarchy(&mut self, dimension: String) -> Result<(), Error> {
+        let maximum_id = self.next_attribute_id()?;
         match self.dimensions.entry(dimension) {
             Entry::Occupied(e) => Err(Error::ExistingDimension(e.key().to_string())),
             Entry::Vacant(e) => {
-                e.insert(Dimension::Anarchy(HashMap::new()));
+                e.insert(Dimension::anarchy_with_maximum(maximum_id));
                 Ok(())
             }
         }
@@ -61,10 +73,11 @@ impl AccessStructure {
     /// Only refreshed keys can decrypt for an access policy belonging to the
     /// semantic space of the new dimension.
     pub fn add_hierarchy(&mut self, dimension: String) -> Result<(), Error> {
+        let maximum_id = self.next_attribute_id()?;
         match self.dimensions.entry(dimension) {
             Entry::Occupied(e) => Err(Error::ExistingDimension(e.key().to_string())),
             Entry::Vacant(e) => {
-                e.insert(Dimension::Hierarchy(Dict::new()));
+                e.insert(Dimension::hierarchy_with_maximum(maximum_id));
                 Ok(())
             }
         }
@@ -107,16 +120,12 @@ impl AccessStructure {
         encryption_hint: EncryptionHint,
         after: Option<&str>,
     ) -> Result<(), Error> {
-        let cnt = self
-            .dimensions
-            .values()
-            .map(Dimension::nb_attributes)
-            .sum::<usize>();
+        let id = self.next_attribute_id()?;
 
         self.dimensions
             .get_mut(&attribute.dimension)
             .ok_or_else(|| Error::DimensionNotFound(attribute.dimension.clone()))?
-            .add_attribute(attribute.name, encryption_hint, after, cnt)?;
+            .add_attribute(attribute.name, encryption_hint, after, id)?;
 
         Ok(())
     }
@@ -195,6 +204,74 @@ impl AccessStructure {
         }
     }
 
+    /// Validates a DNF clause and reduces repeated attributes from the same
+    /// dimension to their strongest conjunction.
+    fn normalize_clause(
+        &self,
+        clause: &[QualifiedAttribute],
+    ) -> Result<Vec<QualifiedAttribute>, Error> {
+        let mut normalized = HashMap::<String, String>::with_capacity(clause.len());
+
+        for attribute in clause {
+            let dimension = self
+                .dimensions
+                .get(&attribute.dimension)
+                .ok_or_else(|| Error::DimensionNotFound(attribute.dimension.clone()))?;
+            dimension
+                .get_attribute(&attribute.name)
+                .ok_or_else(|| Error::AttributeNotFound(attribute.to_string()))?;
+
+            match normalized.entry(attribute.dimension.clone()) {
+                Entry::Vacant(entry) => {
+                    entry.insert(attribute.name.clone());
+                }
+                Entry::Occupied(mut entry) => {
+                    let conjunction =
+                        dimension
+                            .conjunct(entry.get(), &attribute.name)
+                            .map_err(|error| {
+                                Error::InvalidBooleanExpression(format!(
+                                    "invalid conjunction in dimension '{}': {error}",
+                                    attribute.dimension
+                                ))
+                            })?;
+                    entry.insert(conjunction);
+                }
+            }
+        }
+
+        let mut normalized = normalized
+            .into_iter()
+            .map(|(dimension, name)| QualifiedAttribute { dimension, name })
+            .collect::<Vec<_>>();
+        normalized.sort_unstable();
+        Ok(normalized)
+    }
+
+    /// Returns whether the right represented by `lhs` dominates the right
+    /// represented by `rhs`, treating omitted dimensions as empty attributes.
+    fn clause_dominates(
+        &self,
+        lhs: &[QualifiedAttribute],
+        rhs: &[QualifiedAttribute],
+    ) -> Result<bool, Error> {
+        for (dimension_name, dimension) in &self.dimensions {
+            let lhs_value = lhs
+                .iter()
+                .find(|attribute| &attribute.dimension == dimension_name)
+                .map(|attribute| attribute.name.as_str());
+            let rhs_value = rhs
+                .iter()
+                .find(|attribute| &attribute.dimension == dimension_name)
+                .map(|attribute| attribute.name.as_str());
+
+            if !dimension.dominates(lhs_value, rhs_value)? {
+                return Ok(false);
+            }
+        }
+        Ok(true)
+    }
+
     /// Retrieves the ID of an attribute.
     #[cfg(test)]
     fn get_attribute_id(&self, attribute: &QualifiedAttribute) -> Result<usize, Error> {
@@ -214,13 +291,13 @@ impl AccessStructure {
         &self,
         clause: &[QualifiedAttribute],
     ) -> Result<HashMap<String, Dimension>, Error> {
-        clause
-            .iter()
+        self.normalize_clause(clause)?
+            .into_iter()
             .map(|qa| {
                 self.dimensions
                     .get(&qa.dimension)
                     .ok_or_else(|| Error::DimensionNotFound(qa.dimension.clone()))
-                    .and_then(|d| d.restrict(qa.name.to_string()))
+                    .and_then(|d| d.restrict(qa.name.clone()))
                     .map(|d| (qa.dimension.clone(), d))
             })
             .collect()
@@ -245,28 +322,7 @@ impl AccessStructure {
             .map(|(ids, _, _)| ids)
             .collect::<Vec<_>>();
 
-            Ok(semantic_points)
-
-        // The restricted space is Ω\π_c(Ω).
-        // let restricted_space = self
-        //     .dimensions
-        //     .iter()
-        //     .filter(|(name, _)| !semantic_space.contains_key(*name))
-        //     .collect::<Vec<_>>();
-
-        // // Now generate the complementary space by combining the
-        // let complementary_points = combine(&restricted_space)
-        //     .into_iter()
-        //     .flat_map(|(prefix, _, _)| {
-        //         semantic_points.iter().map(move |suffix| {
-        //             let mut prefix = prefix.clone();
-        //             prefix.append(&mut suffix.clone());
-        //             prefix
-        //         })
-        //     })
-        //     .collect::<Vec<_>>();
-
-        // Ok(complementary_points)
+        Ok(semantic_points)
     }
 
     /// Returns the rights in the complementary space of the given access policy.
@@ -289,19 +345,42 @@ impl AccessStructure {
     }
 
     fn generate_associated_rights(&self, ap: &AccessPolicy) -> Result<HashSet<Right>, Error> {
-        let dnf = ap.to_dnf();
-        let len = dnf.len();
-        dnf.into_iter()
-            .try_fold(HashSet::with_capacity(len), |mut rights, conjunction| {
-                let r = Right::from_point(
+        let clauses = ap
+            .to_dnf()
+            .iter()
+            .map(|clause| self.normalize_clause(clause))
+            .collect::<Result<HashSet<_>, _>>()?
+            .into_iter()
+            .collect::<Vec<_>>();
+
+        // A stronger clause is redundant when a weaker clause already grants
+        // every user satisfying it access to the ciphertext. Keep only the
+        // minimal, non-subsumed requirements while preserving policy semantics.
+        let mut retained = Vec::with_capacity(clauses.len());
+        for (index, clause) in clauses.iter().enumerate() {
+            let mut is_redundant = false;
+            for (other_index, other) in clauses.iter().enumerate() {
+                if index != other_index && self.clause_dominates(clause, other)? {
+                    is_redundant = true;
+                    break;
+                }
+            }
+            if !is_redundant {
+                retained.push(clause);
+            }
+        }
+
+        retained
+            .into_iter()
+            .map(|conjunction| {
+                Right::from_point(
                     conjunction
-                        .into_iter()
-                        .map(|attr| self.get_attribute(&attr).map(|params| params.id))
+                        .iter()
+                        .map(|attr| self.get_attribute(attr).map(Attribute::get_id))
                         .collect::<Result<_, _>>()?,
-                )?;
-                rights.insert(r);
-                Ok(rights)
+                )
             })
+            .collect()
     }
 }
 
@@ -419,7 +498,7 @@ mod serialization {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::abe_policy::gen_structure;
+    use crate::abe_policy::{dimension::MAX_ATTRIBUTE_NAME, gen_structure};
 
     #[test]
     fn test_combine() {
@@ -556,12 +635,9 @@ mod tests {
                 structure
                     .generate_complementary_rights(&AccessPolicy::parse(ap)?)?
                     .len(),
-                // There are 2 rights in the security dimension, plus the
-                // broadcast for this dimension. This is the restricted
-                // space. There is only one projection of DPT::HR, which is the
-                // universal broadcast. The complementary space is generated by
-                // extending these two points with the restricted space.
-                2 * (1 + 2)
+                // LP-Covercrypt does not expand the missing SEC dimension.
+                // DPT::HR yields only the empty right and DPT::HR.
+                2
             );
 
             let ap = "SEC::LOW";
@@ -569,12 +645,122 @@ mod tests {
                 structure
                     .generate_complementary_rights(&AccessPolicy::parse(ap)?)?
                     .len(),
-                // The restricted space is the department dimension, and the
-                // lower points are the associated point, the point associated
-                // to "SEC::LOW" and the universal broadcast.
-                2 * (1 + 5)
+                // LP-Covercrypt does not expand the missing DPT dimension.
+                // SEC::LOW yields only the empty right and SEC::LOW.
+                2
             );
         }
+        Ok(())
+    }
+
+    #[test]
+    fn test_maximum_attribute_is_structural_and_protected() -> Result<(), Error> {
+        let mut structure = AccessStructure::new();
+        structure.add_hierarchy("SEC".to_string())?;
+        structure.add_attribute(
+            QualifiedAttribute::new("SEC", "LOW"),
+            EncryptionHint::Classic,
+            None,
+        )?;
+        structure.add_attribute(
+            QualifiedAttribute::new("SEC", "HIGH"),
+            EncryptionHint::Hybridized,
+            Some("LOW"),
+        )?;
+
+        let attributes = structure
+            .attributes()
+            .filter(|attribute| attribute.dimension == "SEC")
+            .map(|attribute| attribute.name)
+            .collect::<Vec<_>>();
+        assert_eq!(attributes, ["LOW", "HIGH", MAX_ATTRIBUTE_NAME]);
+
+        let maximum = QualifiedAttribute::new("SEC", MAX_ATTRIBUTE_NAME);
+        assert!(structure
+            .add_attribute(maximum.clone(), EncryptionHint::Classic, None)
+            .is_err());
+        assert!(structure.del_attribute(&maximum).is_err());
+        assert!(structure.disable_attribute(&maximum).is_err());
+        assert!(structure
+            .rename_attribute(&maximum, "RENAMED".to_string())
+            .is_err());
+        assert!(structure
+            .rename_attribute(
+                &QualifiedAttribute::new("SEC", "LOW"),
+                MAX_ATTRIBUTE_NAME.to_string(),
+            )
+            .is_err());
+        assert!(structure
+            .add_attribute(
+                QualifiedAttribute::new("SEC", "ABOVE_MAX"),
+                EncryptionHint::Classic,
+                Some(MAX_ATTRIBUTE_NAME),
+            )
+            .is_err());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_lp_missing_dimension_and_explicit_maximum() -> Result<(), Error> {
+        let mut structure = AccessStructure::new();
+        gen_structure(&mut structure, false)?;
+
+        let restricted = structure.ap_to_usk_rights(&AccessPolicy::parse("DPT::HR")?)?;
+        assert_eq!(restricted.len(), 2);
+
+        let unrestricted = structure.ap_to_usk_rights(&AccessPolicy::parse("DPT::$")?)?;
+        // Empty + five concrete department attributes + the maximum attribute.
+        assert_eq!(unrestricted.len(), 7);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_invalid_anarchic_conjunction_is_rejected() -> Result<(), Error> {
+        let mut structure = AccessStructure::new();
+        gen_structure(&mut structure, false)?;
+        let invalid = AccessPolicy::parse("DPT::HR && DPT::FIN")?;
+
+        assert!(structure.ap_to_usk_rights(&invalid).is_err());
+        assert!(structure.ap_to_enc_rights(&invalid).is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn test_hierarchical_conjunction_reduces_to_stronger_attribute() -> Result<(), Error> {
+        let mut structure = AccessStructure::new();
+        gen_structure(&mut structure, false)?;
+
+        let conjunction = AccessPolicy::parse("SEC::LOW && SEC::TOP")?;
+        let strongest = AccessPolicy::parse("SEC::TOP")?;
+        assert_eq!(
+            structure.ap_to_usk_rights(&conjunction)?,
+            structure.ap_to_usk_rights(&strongest)?
+        );
+        assert_eq!(
+            structure.ap_to_enc_rights(&conjunction)?,
+            structure.ap_to_enc_rights(&strongest)?
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_ciphertext_subsumption_removes_redundant_clauses() -> Result<(), Error> {
+        let mut structure = AccessStructure::new();
+        gen_structure(&mut structure, false)?;
+
+        let hierarchical = AccessPolicy::parse("SEC::LOW || SEC::TOP")?;
+        assert_eq!(
+            structure.ap_to_enc_rights(&hierarchical)?,
+            structure.ap_to_enc_rights(&AccessPolicy::parse("SEC::LOW")?)?
+        );
+
+        let cross_dimension = AccessPolicy::parse("DPT::HR || (DPT::HR && SEC::TOP)")?;
+        assert_eq!(
+            structure.ap_to_enc_rights(&cross_dimension)?,
+            structure.ap_to_enc_rights(&AccessPolicy::parse("DPT::HR")?)?
+        );
         Ok(())
     }
 }

@@ -261,6 +261,28 @@ mod tests {
     }
 
     #[test]
+    fn test_least_privilege_requires_explicit_dimension_maximum() -> Result<(), Error> {
+        let cc = Covercrypt::default();
+        let (mut msk, mpk) = cc_keygen(&cc, false)?;
+
+        let department_ciphertext = AccessPolicy::parse("DPT::FIN")?;
+        let (secret, encapsulation) = cc.encaps(&mpk, &department_ciphertext)?;
+
+        // Omitting DPT grants only its empty value, so this key cannot decrypt
+        // a ciphertext requiring a concrete department.
+        let restricted =
+            cc.generate_user_secret_key(&mut msk, &AccessPolicy::parse("SEC::TOP")?)?;
+        assert!(cc.decaps(&restricted, &encapsulation)?.is_none());
+
+        // Explicit DPT::$ grants the full downward closure of the dimension.
+        let unrestricted =
+            cc.generate_user_secret_key(&mut msk, &AccessPolicy::parse("SEC::TOP && DPT::$")?)?;
+        assert_eq!(Some(secret), cc.decaps(&unrestricted, &encapsulation)?);
+
+        Ok(())
+    }
+
+    #[test]
     fn test_broadcast() {
         let cc = Covercrypt::default();
         let ap = AccessPolicy::parse("*").unwrap();

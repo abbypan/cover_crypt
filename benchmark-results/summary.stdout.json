@@ -1,0 +1,56 @@
+{
+  "baseline_ref": "089a548",
+  "iterations_per_pair": 2000,
+  "policy_corpus": {
+    "ciphertext_policies": 47,
+    "user_policies": 79,
+    "pairs": 3713,
+    "same_y_pairs": 1692,
+    "different_y_pairs": 2021
+  },
+  "same_y": {
+    "success": {
+      "pairs": 668,
+      "lp_us": 794.67,
+      "covercrypt_us": 798.76,
+      "reduction_percent": 0.51
+    },
+    "failure": {
+      "pairs": 1024,
+      "lp_us": 807.78,
+      "covercrypt_us": 803.12,
+      "reduction_percent": -0.58
+    }
+  },
+  "different_y": {
+    "A": {
+      "pairs": 224,
+      "lp_us": 357.87,
+      "covercrypt_us": 1086.34,
+      "reduction_percent": 67.06
+    },
+    "B": {
+      "pairs": 800,
+      "lp_us": 293.2,
+      "covercrypt_us": 1173.41,
+      "reduction_percent": 75.01
+    },
+    "C": {
+      "pairs": 997,
+      "lp_us": 383.3,
+      "covercrypt_us": 1096.68,
+      "reduction_percent": 65.05
+    }
+  },
+  "environment": {
+    "workers": 12,
+    "workers_cpu_pinned": true,
+    "lp_git_head": "1e62374d08f91d16b7b3c59b720a5f447fb44444",
+    "lp_worktree_dirty": true,
+    "os": "Linux-7.1.4-arch1-1-x86_64-with-glibc2.43",
+    "cpu": "AMD Ryzen 9 5900 12-Core Processor",
+    "memory_gib": 62.7,
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14) (Arch Linux rust 1:1.97.1-1)",
+    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30) (Arch Linux rust 1:1.97.1-1)"
+  }
+}

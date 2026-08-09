@@ -1,14 +1,9 @@
 use cosmian_cover_crypt::{
     api::Covercrypt,
     traits::{KemAc, PkeAc},
-    AccessPolicy,
-    AccessStructure,
+    AccessPolicy, AccessStructure, EncryptionHint, Error, MasterPublicKey, MasterSecretKey,
     QualifiedAttribute,
-    EncryptionHint,
-    MasterPublicKey,
-    MasterSecretKey,
-    Error,
-}; 
+};
 use cosmian_crypto_core::Aes256Gcm;
 use criterion::{criterion_group, criterion_main, BatchSize, Criterion};
 use std::fs::File;
@@ -37,12 +32,6 @@ fn create_custom_structure() -> Result<AccessStructure, Error> {
         EncryptionHint::Hybridized,
         Some("MED"), // After MED
     )?;
-    structure.add_attribute(
-        QualifiedAttribute::new("Security", "*"),
-        EncryptionHint::Hybridized,
-        Some("HIGH"), // After HIGH
-    )?;
-
     // Create an anarchic dimension for Department
     structure.add_anarchy("Department".to_string())?;
 
@@ -57,12 +46,6 @@ fn create_custom_structure() -> Result<AccessStructure, Error> {
         EncryptionHint::Classic,
         None,
     )?;
-    structure.add_attribute(
-        QualifiedAttribute::new("Department", "*"),
-        EncryptionHint::Classic,
-        None,
-    )?;
-
     // Create another anarchic dimension for Region
     structure.add_anarchy("Region".to_string())?;
 
@@ -76,12 +59,6 @@ fn create_custom_structure() -> Result<AccessStructure, Error> {
         EncryptionHint::Classic,
         None,
     )?;
-    structure.add_attribute(
-        QualifiedAttribute::new("Region", "*"),
-        EncryptionHint::Classic,
-        None,
-    )?;
-
     Ok(structure)
 }
 
@@ -100,90 +77,90 @@ fn setup_with_custom_structure(
 // 总共: 5 × 4 × 4 = 80种组合 (Security=null只保留一份，不重复)
 const ENC_APS: [(&str, usize); 79] = [
     // Security = null (只保留一份，不重复)
-   // ("", 1),
+    // ("", 1),
     ("Department::DEV", 1),
     ("Department::MKG", 1),
-    ("Department::*", 1),
+    ("Department::$", 1),
     ("Region::EN", 1),
     ("Region::FR", 1),
-    ("Region::*", 1),
+    ("Region::$", 1),
     ("Department::DEV && Region::EN", 1),
     ("Department::DEV && Region::FR", 1),
-    ("Department::DEV && Region::*", 1),
+    ("Department::DEV && Region::$", 1),
     ("Department::MKG && Region::EN", 1),
     ("Department::MKG && Region::FR", 1),
-    ("Department::MKG && Region::*", 1),
-    ("Department::* && Region::EN", 1),
-    ("Department::* && Region::FR", 1),
-    ("Department::* && Region::*", 1),
+    ("Department::MKG && Region::$", 1),
+    ("Department::$ && Region::EN", 1),
+    ("Department::$ && Region::FR", 1),
+    ("Department::$ && Region::$", 1),
     // Security = LOW (Classical)
     ("Security::LOW", 1),
     ("Security::LOW && Department::DEV", 1),
     ("Security::LOW && Department::MKG", 1),
-    ("Security::LOW && Department::*", 1),
+    ("Security::LOW && Department::$", 1),
     ("Security::LOW && Region::EN", 1),
     ("Security::LOW && Region::FR", 1),
-    ("Security::LOW && Region::*", 1),
+    ("Security::LOW && Region::$", 1),
     ("Security::LOW && Department::DEV && Region::EN", 1),
     ("Security::LOW && Department::DEV && Region::FR", 1),
-    ("Security::LOW && Department::DEV && Region::*", 1),
+    ("Security::LOW && Department::DEV && Region::$", 1),
     ("Security::LOW && Department::MKG && Region::EN", 1),
     ("Security::LOW && Department::MKG && Region::FR", 1),
-    ("Security::LOW && Department::MKG && Region::*", 1),
-    ("Security::LOW && Department::* && Region::EN", 1),
-    ("Security::LOW && Department::* && Region::FR", 1),
-    ("Security::LOW && Department::* && Region::*", 1),
+    ("Security::LOW && Department::MKG && Region::$", 1),
+    ("Security::LOW && Department::$ && Region::EN", 1),
+    ("Security::LOW && Department::$ && Region::FR", 1),
+    ("Security::LOW && Department::$ && Region::$", 1),
     // Security = MED (Classical)
     ("Security::MED", 1),
     ("Security::MED && Department::DEV", 1),
     ("Security::MED && Department::MKG", 1),
-    ("Security::MED && Department::*", 1),
+    ("Security::MED && Department::$", 1),
     ("Security::MED && Region::EN", 1),
     ("Security::MED && Region::FR", 1),
-    ("Security::MED && Region::*", 1),
+    ("Security::MED && Region::$", 1),
     ("Security::MED && Department::DEV && Region::EN", 1),
     ("Security::MED && Department::DEV && Region::FR", 1),
-    ("Security::MED && Department::DEV && Region::*", 1),
+    ("Security::MED && Department::DEV && Region::$", 1),
     ("Security::MED && Department::MKG && Region::EN", 1),
     ("Security::MED && Department::MKG && Region::FR", 1),
-    ("Security::MED && Department::MKG && Region::*", 1),
-    ("Security::MED && Department::* && Region::EN", 1),
-    ("Security::MED && Department::* && Region::FR", 1),
-    ("Security::MED && Department::* && Region::*", 1),
+    ("Security::MED && Department::MKG && Region::$", 1),
+    ("Security::MED && Department::$ && Region::EN", 1),
+    ("Security::MED && Department::$ && Region::FR", 1),
+    ("Security::MED && Department::$ && Region::$", 1),
     // Security = HIGH (Hybridized)
     ("Security::HIGH", 1),
     ("Security::HIGH && Department::DEV", 1),
     ("Security::HIGH && Department::MKG", 1),
-    ("Security::HIGH && Department::*", 1),
+    ("Security::HIGH && Department::$", 1),
     ("Security::HIGH && Region::EN", 1),
     ("Security::HIGH && Region::FR", 1),
-    ("Security::HIGH && Region::*", 1),
+    ("Security::HIGH && Region::$", 1),
     ("Security::HIGH && Department::DEV && Region::EN", 1),
     ("Security::HIGH && Department::DEV && Region::FR", 1),
-    ("Security::HIGH && Department::DEV && Region::*", 1),
+    ("Security::HIGH && Department::DEV && Region::$", 1),
     ("Security::HIGH && Department::MKG && Region::EN", 1),
     ("Security::HIGH && Department::MKG && Region::FR", 1),
-    ("Security::HIGH && Department::MKG && Region::*", 1),
-    ("Security::HIGH && Department::* && Region::EN", 1),
-    ("Security::HIGH && Department::* && Region::FR", 1),
-    ("Security::HIGH && Department::* && Region::*", 1),
+    ("Security::HIGH && Department::MKG && Region::$", 1),
+    ("Security::HIGH && Department::$ && Region::EN", 1),
+    ("Security::HIGH && Department::$ && Region::FR", 1),
+    ("Security::HIGH && Department::$ && Region::$", 1),
     // Security = *
-    ("Security::*", 1),
-    ("Security::* && Department::DEV", 1),
-    ("Security::* && Department::MKG", 1),
-    ("Security::* && Department::*", 1),
-    ("Security::* && Region::EN", 1),
-    ("Security::* && Region::FR", 1),
-    ("Security::* && Region::*", 1),
-    ("Security::* && Department::DEV && Region::EN", 1),
-    ("Security::* && Department::DEV && Region::FR", 1),
-    ("Security::* && Department::DEV && Region::*", 1),
-    ("Security::* && Department::MKG && Region::EN", 1),
-    ("Security::* && Department::MKG && Region::FR", 1),
-    ("Security::* && Department::MKG && Region::*", 1),
-    ("Security::* && Department::* && Region::EN", 1),
-    ("Security::* && Department::* && Region::FR", 1),
-    ("Security::* && Department::* && Region::*", 1),
+    ("Security::$", 1),
+    ("Security::$ && Department::DEV", 1),
+    ("Security::$ && Department::MKG", 1),
+    ("Security::$ && Department::$", 1),
+    ("Security::$ && Region::EN", 1),
+    ("Security::$ && Region::FR", 1),
+    ("Security::$ && Region::$", 1),
+    ("Security::$ && Department::DEV && Region::EN", 1),
+    ("Security::$ && Department::DEV && Region::FR", 1),
+    ("Security::$ && Department::DEV && Region::$", 1),
+    ("Security::$ && Department::MKG && Region::EN", 1),
+    ("Security::$ && Department::MKG && Region::FR", 1),
+    ("Security::$ && Department::MKG && Region::$", 1),
+    ("Security::$ && Department::$ && Region::EN", 1),
+    ("Security::$ && Department::$ && Region::FR", 1),
+    ("Security::$ && Department::$ && Region::$", 1),
 ];
 
 // 合并的 USK policies - 所有3个dimension的排列组合 (删除重复项)
@@ -191,97 +168,97 @@ const ENC_APS: [(&str, usize); 79] = [
 // 总共: 5 × 4 × 4 = 80种组合 (Security=null只保留一份，不重复)
 const USK_APS: [(&str, usize); 79] = [
     // Security = null (只保留一份，不重复)
-   // ("", 8),
+    // ("", 8),
     ("Department::DEV", 8),
     ("Department::MKG", 8),
-    ("Department::*", 8),
+    ("Department::$", 8),
     ("Region::EN", 8),
     ("Region::FR", 8),
-    ("Region::*", 8),
+    ("Region::$", 8),
     ("Department::DEV && Region::EN", 8),
     ("Department::DEV && Region::FR", 8),
-    ("Department::DEV && Region::*", 8),
+    ("Department::DEV && Region::$", 8),
     ("Department::MKG && Region::EN", 8),
     ("Department::MKG && Region::FR", 8),
-    ("Department::MKG && Region::*", 8),
-    ("Department::* && Region::EN", 8),
-    ("Department::* && Region::FR", 8),
-    ("Department::* && Region::*", 8),
+    ("Department::MKG && Region::$", 8),
+    ("Department::$ && Region::EN", 8),
+    ("Department::$ && Region::FR", 8),
+    ("Department::$ && Region::$", 8),
     // Security = LOW (Classical)
     ("Security::LOW", 8),
     ("Security::LOW && Department::DEV", 8),
     ("Security::LOW && Department::MKG", 8),
-    ("Security::LOW && Department::*", 8),
+    ("Security::LOW && Department::$", 8),
     ("Security::LOW && Region::EN", 8),
     ("Security::LOW && Region::FR", 8),
-    ("Security::LOW && Region::*", 8),
+    ("Security::LOW && Region::$", 8),
     ("Security::LOW && Department::DEV && Region::EN", 8),
     ("Security::LOW && Department::DEV && Region::FR", 8),
-    ("Security::LOW && Department::DEV && Region::*", 8),
+    ("Security::LOW && Department::DEV && Region::$", 8),
     ("Security::LOW && Department::MKG && Region::EN", 8),
     ("Security::LOW && Department::MKG && Region::FR", 8),
-    ("Security::LOW && Department::MKG && Region::*", 8),
-    ("Security::LOW && Department::* && Region::EN", 8),
-    ("Security::LOW && Department::* && Region::FR", 8),
-    ("Security::LOW && Department::* && Region::*", 8),
+    ("Security::LOW && Department::MKG && Region::$", 8),
+    ("Security::LOW && Department::$ && Region::EN", 8),
+    ("Security::LOW && Department::$ && Region::FR", 8),
+    ("Security::LOW && Department::$ && Region::$", 8),
     // Security = MED (Classical)
     ("Security::MED", 20),
     ("Security::MED && Department::DEV", 20),
     ("Security::MED && Department::MKG", 20),
-    ("Security::MED && Department::*", 20),
+    ("Security::MED && Department::$", 20),
     ("Security::MED && Region::EN", 20),
     ("Security::MED && Region::FR", 20),
-    ("Security::MED && Region::*", 20),
+    ("Security::MED && Region::$", 20),
     ("Security::MED && Department::DEV && Region::EN", 20),
     ("Security::MED && Department::DEV && Region::FR", 20),
-    ("Security::MED && Department::DEV && Region::*", 20),
+    ("Security::MED && Department::DEV && Region::$", 20),
     ("Security::MED && Department::MKG && Region::EN", 20),
     ("Security::MED && Department::MKG && Region::FR", 20),
-    ("Security::MED && Department::MKG && Region::*", 20),
-    ("Security::MED && Department::* && Region::EN", 20),
-    ("Security::MED && Department::* && Region::FR", 20),
-    ("Security::MED && Department::* && Region::*", 20),
+    ("Security::MED && Department::MKG && Region::$", 20),
+    ("Security::MED && Department::$ && Region::EN", 20),
+    ("Security::MED && Department::$ && Region::FR", 20),
+    ("Security::MED && Department::$ && Region::$", 20),
     // Security = HIGH (Hybridized)
     ("Security::HIGH", 12),
     ("Security::HIGH && Department::DEV", 12),
     ("Security::HIGH && Department::MKG", 12),
-    ("Security::HIGH && Department::*", 12),
+    ("Security::HIGH && Department::$", 12),
     ("Security::HIGH && Region::EN", 12),
     ("Security::HIGH && Region::FR", 12),
-    ("Security::HIGH && Region::*", 12),
+    ("Security::HIGH && Region::$", 12),
     ("Security::HIGH && Department::DEV && Region::EN", 12),
     ("Security::HIGH && Department::DEV && Region::FR", 12),
-    ("Security::HIGH && Department::DEV && Region::*", 12),
+    ("Security::HIGH && Department::DEV && Region::$", 12),
     ("Security::HIGH && Department::MKG && Region::EN", 12),
     ("Security::HIGH && Department::MKG && Region::FR", 12),
-    ("Security::HIGH && Department::MKG && Region::*", 12),
-    ("Security::HIGH && Department::* && Region::EN", 12),
-    ("Security::HIGH && Department::* && Region::FR", 12),
-    ("Security::HIGH && Department::* && Region::*", 12),
+    ("Security::HIGH && Department::MKG && Region::$", 12),
+    ("Security::HIGH && Department::$ && Region::EN", 12),
+    ("Security::HIGH && Department::$ && Region::FR", 12),
+    ("Security::HIGH && Department::$ && Region::$", 12),
     // Security = * (Hybridized)
-    ("Security::*", 30),
-    ("Security::* && Department::DEV", 30),
-    ("Security::* && Department::MKG", 30),
-    ("Security::* && Department::*", 30),
-    ("Security::* && Region::EN", 30),
-    ("Security::* && Region::FR", 30),
-    ("Security::* && Region::*", 30),
-    ("Security::* && Department::DEV && Region::EN", 30),
-    ("Security::* && Department::DEV && Region::FR", 30),
-    ("Security::* && Department::DEV && Region::*", 30),
-    ("Security::* && Department::MKG && Region::EN", 30),
-    ("Security::* && Department::MKG && Region::FR", 30),
-    ("Security::* && Department::MKG && Region::*", 30),
-    ("Security::* && Department::* && Region::EN", 30),
-    ("Security::* && Department::* && Region::FR", 30),
-    ("Security::* && Department::* && Region::*", 30),
+    ("Security::$", 30),
+    ("Security::$ && Department::DEV", 30),
+    ("Security::$ && Department::MKG", 30),
+    ("Security::$ && Department::$", 30),
+    ("Security::$ && Region::EN", 30),
+    ("Security::$ && Region::FR", 30),
+    ("Security::$ && Region::$", 30),
+    ("Security::$ && Department::DEV && Region::EN", 30),
+    ("Security::$ && Department::DEV && Region::FR", 30),
+    ("Security::$ && Department::DEV && Region::$", 30),
+    ("Security::$ && Department::MKG && Region::EN", 30),
+    ("Security::$ && Department::MKG && Region::FR", 30),
+    ("Security::$ && Department::MKG && Region::$", 30),
+    ("Security::$ && Department::$ && Region::EN", 30),
+    ("Security::$ && Department::$ && Region::FR", 30),
+    ("Security::$ && Department::$ && Region::$", 30),
 ];
 
 const PLAINTEXT: &[u8] = b"testing encryption/decryption benchmark";
 
-/// enc_ap uses hybridized attributes (Security::HIGH or Security::*) => hybridized, else classical.
+/// enc_ap uses hybridized attributes (Security::HIGH or Security::$) => hybridized, else classical.
 fn is_hybridized_enc_ap(enc_ap: &str) -> bool {
-    enc_ap.contains("Security::HIGH") || enc_ap.contains("Security::*")
+    enc_ap.contains("Security::HIGH") || enc_ap.contains("Security::$")
 }
 
 macro_rules! gen_enc {
@@ -289,7 +266,7 @@ macro_rules! gen_enc {
         let (k, enc) = $cc
             .encaps(&$mpk, &AccessPolicy::parse($ap).unwrap())
             .unwrap();
-       // assert_eq!(enc.count(), $cnt);
+        // assert_eq!(enc.count(), $cnt);
         (k, enc)
     }};
 }
@@ -299,7 +276,7 @@ macro_rules! gen_usk {
         let usk = $cc
             .generate_user_secret_key(&mut $msk, &AccessPolicy::parse($ap).unwrap())
             .unwrap();
-     //   assert_eq!(usk.count(), $cnt);
+        //   assert_eq!(usk.count(), $cnt);
         usk
     }};
 }
@@ -319,7 +296,10 @@ fn bench_classical_encapsulation(c: &mut Criterion) {
             let bench_name = if enc_ap.is_empty() {
                 "empty".to_string()
             } else {
-                enc_ap.replace("::", "_").replace(" && ", "_").replace(" ", "")
+                enc_ap
+                    .replace("::", "_")
+                    .replace(" && ", "_")
+                    .replace(" ", "")
             };
             group.bench_function(format!("{}", bench_name), |b| {
                 b.iter(|| cc.encaps(&mpk, &eap).unwrap())
@@ -348,28 +328,31 @@ fn bench_classical_decapsulation(c: &mut Criterion) {
                 let enc_name = if enc_ap.is_empty() {
                     "empty".to_string()
                 } else {
-                    enc_ap.replace("::", "_").replace(" && ", "_").replace(" ", "")
+                    enc_ap
+                        .replace("::", "_")
+                        .replace(" && ", "_")
+                        .replace(" ", "")
                 };
                 let usk_name = if usk_ap.is_empty() {
                     "empty".to_string()
                 } else {
-                    usk_ap.replace("::", "_").replace(" && ", "_").replace(" ", "")
+                    usk_ap
+                        .replace("::", "_")
+                        .replace(" && ", "_")
+                        .replace(" ", "")
                 };
-                group.bench_function(
-                    format!("enc_{}_usk_{}", enc_name, usk_name),
-                    |b| {
-                        b.iter_batched(
-                            || {
-                                (
-                                    cc.generate_user_secret_key(&mut msk, &uap).unwrap(),
-                                    cc.encaps(&mpk, &eap).unwrap(),
-                                )
-                            },
-                            |(usk, (_, enc))| cc.decaps(&usk, &enc).unwrap(),
-                            BatchSize::SmallInput,
-                        )
-                    },
-                );
+                group.bench_function(format!("enc_{}_usk_{}", enc_name, usk_name), |b| {
+                    b.iter_batched(
+                        || {
+                            (
+                                cc.generate_user_secret_key(&mut msk, &uap).unwrap(),
+                                cc.encaps(&mpk, &eap).unwrap(),
+                            )
+                        },
+                        |(usk, (_, enc))| cc.decaps(&usk, &enc).unwrap(),
+                        BatchSize::SmallInput,
+                    )
+                });
             }
         }
     }
@@ -387,7 +370,10 @@ fn bench_hybridized_encapsulation(c: &mut Criterion) {
             let bench_name = if enc_ap.is_empty() {
                 "empty".to_string()
             } else {
-                enc_ap.replace("::", "_").replace(" && ", "_").replace(" ", "")
+                enc_ap
+                    .replace("::", "_")
+                    .replace(" && ", "_")
+                    .replace(" ", "")
             };
             group.bench_function(format!("{}", bench_name), |b| {
                 b.iter(|| cc.encaps(&mpk, &eap).unwrap())
@@ -416,28 +402,31 @@ fn bench_hybridized_decapsulation(c: &mut Criterion) {
                 let enc_name = if enc_ap.is_empty() {
                     "empty".to_string()
                 } else {
-                    enc_ap.replace("::", "_").replace(" && ", "_").replace(" ", "")
+                    enc_ap
+                        .replace("::", "_")
+                        .replace(" && ", "_")
+                        .replace(" ", "")
                 };
                 let usk_name = if usk_ap.is_empty() {
                     "empty".to_string()
                 } else {
-                    usk_ap.replace("::", "_").replace(" && ", "_").replace(" ", "")
+                    usk_ap
+                        .replace("::", "_")
+                        .replace(" && ", "_")
+                        .replace(" ", "")
                 };
-                group.bench_function(
-                    format!("enc_{}_usk_{}", enc_name, usk_name),
-                    |b| {
-                        b.iter_batched(
-                            || {
-                                (
-                                    cc.generate_user_secret_key(&mut msk, &uap).unwrap(),
-                                    cc.encaps(&mpk, &eap).unwrap(),
-                                )
-                            },
-                            |(usk, (_, enc))| cc.decaps(&usk, &enc).unwrap(),
-                            BatchSize::SmallInput,
-                        )
-                    },
-                );
+                group.bench_function(format!("enc_{}_usk_{}", enc_name, usk_name), |b| {
+                    b.iter_batched(
+                        || {
+                            (
+                                cc.generate_user_secret_key(&mut msk, &uap).unwrap(),
+                                cc.encaps(&mpk, &eap).unwrap(),
+                            )
+                        },
+                        |(usk, (_, enc))| cc.decaps(&usk, &enc).unwrap(),
+                        BatchSize::SmallInput,
+                    )
+                });
             }
         }
     }
@@ -451,33 +440,26 @@ fn bench_classical_encryption(c: &mut Criterion) {
     let mut group = c.benchmark_group("Classical encryption");
     for (enc_ap, _cnt_enc) in ENC_APS.iter().filter(|(ap, _)| !is_hybridized_enc_ap(ap)) {
         let eap = AccessPolicy::parse(enc_ap).unwrap();
-        let _ = PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::encrypt(
-            &cc,
-            &mpk,
-            &eap,
-            PLAINTEXT,
-        )
-        .unwrap();
+        let _ = PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::encrypt(&cc, &mpk, &eap, PLAINTEXT)
+            .unwrap();
         let bench_name = if enc_ap.is_empty() {
             "empty".to_string()
         } else {
-            enc_ap.replace("::", "_").replace(" && ", "_").replace(" ", "")
+            enc_ap
+                .replace("::", "_")
+                .replace(" && ", "_")
+                .replace(" ", "")
         };
         group.bench_function(bench_name, |b| {
             b.iter(|| {
-                PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::encrypt(
-                    &cc,
-                    &mpk,
-                    &eap,
-                    PLAINTEXT,
-                )
-                .unwrap()
+                PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::encrypt(&cc, &mpk, &eap, PLAINTEXT)
+                    .unwrap()
             })
         });
     }
 }
 
-/// Hybridized encryption benchmark: enc_ap that use Security::HIGH or Security::*.
+/// Hybridized encryption benchmark: enc_ap that use Security::HIGH or Security::$.
 fn bench_hybridized_encryption(c: &mut Criterion) {
     let cc = Covercrypt::default();
     let (_, mpk) = setup_with_custom_structure(&cc).unwrap();
@@ -485,27 +467,20 @@ fn bench_hybridized_encryption(c: &mut Criterion) {
     let mut group = c.benchmark_group("Hybridized encryption");
     for (enc_ap, _cnt_enc) in ENC_APS.iter().filter(|(ap, _)| is_hybridized_enc_ap(ap)) {
         let eap = AccessPolicy::parse(enc_ap).unwrap();
-        let _ = PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::encrypt(
-            &cc,
-            &mpk,
-            &eap,
-            PLAINTEXT,
-        )
-        .unwrap();
+        let _ = PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::encrypt(&cc, &mpk, &eap, PLAINTEXT)
+            .unwrap();
         let bench_name = if enc_ap.is_empty() {
             "empty".to_string()
         } else {
-            enc_ap.replace("::", "_").replace(" && ", "_").replace(" ", "")
+            enc_ap
+                .replace("::", "_")
+                .replace(" && ", "_")
+                .replace(" ", "")
         };
         group.bench_function(bench_name, |b| {
             b.iter(|| {
-                PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::encrypt(
-                    &cc,
-                    &mpk,
-                    &eap,
-                    PLAINTEXT,
-                )
-                .unwrap()
+                PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::encrypt(&cc, &mpk, &eap, PLAINTEXT)
+                    .unwrap()
             })
         });
     }
@@ -523,19 +498,13 @@ fn bench_classical_decryption(c: &mut Criterion) {
             let uap = AccessPolicy::parse(usk_ap).unwrap();
 
             let usk = gen_usk!(cc, msk, usk_ap, _cnt_secret);
-            let ctx = PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::encrypt(
-                &cc,
-                &mpk,
-                &eap,
-                PLAINTEXT,
-            )
-            .unwrap();
+            let ctx =
+                PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::encrypt(&cc, &mpk, &eap, PLAINTEXT)
+                    .unwrap();
             // Skip when user key cannot decrypt this enc_ap (policy not satisfied)
-            if PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::decrypt(
-                &cc, &usk, &ctx,
-            )
-            .unwrap()
-            .is_none()
+            if PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::decrypt(&cc, &usk, &ctx)
+                .unwrap()
+                .is_none()
             {
                 continue;
             }
@@ -543,44 +512,42 @@ fn bench_classical_decryption(c: &mut Criterion) {
             let enc_name = if enc_ap.is_empty() {
                 "empty".to_string()
             } else {
-                enc_ap.replace("::", "_").replace(" && ", "_").replace(" ", "")
+                enc_ap
+                    .replace("::", "_")
+                    .replace(" && ", "_")
+                    .replace(" ", "")
             };
             let usk_name = if usk_ap.is_empty() {
                 "empty".to_string()
             } else {
-                usk_ap.replace("::", "_").replace(" && ", "_").replace(" ", "")
+                usk_ap
+                    .replace("::", "_")
+                    .replace(" && ", "_")
+                    .replace(" ", "")
             };
-            group.bench_function(
-                format!("enc_{}_usk_{}", enc_name, usk_name),
-                |b| {
-                    b.iter_batched(
-                        || {
-                            (
-                                cc.generate_user_secret_key(&mut msk, &uap).unwrap(),
-                                PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::encrypt(
-                                    &cc,
-                                    &mpk,
-                                    &eap,
-                                    PLAINTEXT,
-                                )
-                                .unwrap(),
+            group.bench_function(format!("enc_{}_usk_{}", enc_name, usk_name), |b| {
+                b.iter_batched(
+                    || {
+                        (
+                            cc.generate_user_secret_key(&mut msk, &uap).unwrap(),
+                            PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::encrypt(
+                                &cc, &mpk, &eap, PLAINTEXT,
                             )
-                        },
-                        |(usk, ctx)| {
-                            PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::decrypt(
-                                &cc, &usk, &ctx,
-                            )
+                            .unwrap(),
+                        )
+                    },
+                    |(usk, ctx)| {
+                        PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::decrypt(&cc, &usk, &ctx)
                             .unwrap()
-                        },
-                        BatchSize::SmallInput,
-                    )
-                },
-            );
+                    },
+                    BatchSize::SmallInput,
+                )
+            });
         }
     }
 }
 
-/// Hybridized decryption benchmark: enc_ap that use Security::HIGH or Security::*.
+/// Hybridized decryption benchmark: enc_ap that use Security::HIGH or Security::$.
 fn bench_hybridized_decryption(c: &mut Criterion) {
     let cc = Covercrypt::default();
     let (mut msk, mpk) = setup_with_custom_structure(&cc).unwrap();
@@ -592,19 +559,13 @@ fn bench_hybridized_decryption(c: &mut Criterion) {
             let uap = AccessPolicy::parse(usk_ap).unwrap();
 
             let usk = gen_usk!(cc, msk, usk_ap, _cnt_secret);
-            let ctx = PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::encrypt(
-                &cc,
-                &mpk,
-                &eap,
-                PLAINTEXT,
-            )
-            .unwrap();
+            let ctx =
+                PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::encrypt(&cc, &mpk, &eap, PLAINTEXT)
+                    .unwrap();
             // Skip when user key cannot decrypt this enc_ap (policy not satisfied)
-            if PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::decrypt(
-                &cc, &usk, &ctx,
-            )
-            .unwrap()
-            .is_none()
+            if PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::decrypt(&cc, &usk, &ctx)
+                .unwrap()
+                .is_none()
             {
                 continue;
             }
@@ -612,39 +573,37 @@ fn bench_hybridized_decryption(c: &mut Criterion) {
             let enc_name = if enc_ap.is_empty() {
                 "empty".to_string()
             } else {
-                enc_ap.replace("::", "_").replace(" && ", "_").replace(" ", "")
+                enc_ap
+                    .replace("::", "_")
+                    .replace(" && ", "_")
+                    .replace(" ", "")
             };
             let usk_name = if usk_ap.is_empty() {
                 "empty".to_string()
             } else {
-                usk_ap.replace("::", "_").replace(" && ", "_").replace(" ", "")
+                usk_ap
+                    .replace("::", "_")
+                    .replace(" && ", "_")
+                    .replace(" ", "")
             };
-            group.bench_function(
-                format!("enc_{}_usk_{}", enc_name, usk_name),
-                |b| {
-                    b.iter_batched(
-                        || {
-                            (
-                                cc.generate_user_secret_key(&mut msk, &uap).unwrap(),
-                                PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::encrypt(
-                                    &cc,
-                                    &mpk,
-                                    &eap,
-                                    PLAINTEXT,
-                                )
-                                .unwrap(),
+            group.bench_function(format!("enc_{}_usk_{}", enc_name, usk_name), |b| {
+                b.iter_batched(
+                    || {
+                        (
+                            cc.generate_user_secret_key(&mut msk, &uap).unwrap(),
+                            PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::encrypt(
+                                &cc, &mpk, &eap, PLAINTEXT,
                             )
-                        },
-                        |(usk, ctx)| {
-                            PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::decrypt(
-                                &cc, &usk, &ctx,
-                            )
+                            .unwrap(),
+                        )
+                    },
+                    |(usk, ctx)| {
+                        PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::decrypt(&cc, &usk, &ctx)
                             .unwrap()
-                        },
-                        BatchSize::SmallInput,
-                    )
-                },
-            );
+                    },
+                    BatchSize::SmallInput,
+                )
+            });
         }
     }
 }
@@ -664,7 +623,10 @@ fn collect_benchmark_results_to_csv() -> Result<(), Box<dyn std::error::Error>> 
     let total_rows = total_enc * total_usk;
 
     eprintln!("Writing benchmark results to benchmark_results.csv");
-    eprintln!("  Total: {} enc_ap × {} user_ap = {} rows", total_enc, total_usk, total_rows);
+    eprintln!(
+        "  Total: {} enc_ap × {} user_ap = {} rows",
+        total_enc, total_usk, total_rows
+    );
 
     let mut file = File::create("benchmark_results.csv")?;
     let header = "enc_ap,user_ap,type,encryption,decryption,decryption_result";
@@ -675,16 +637,18 @@ fn collect_benchmark_results_to_csv() -> Result<(), Box<dyn std::error::Error>> 
     let (mut msk, mpk) = setup_with_custom_structure(&cc)?;
 
     // Encryption time per enc_ap (same for all user_ap in that row)
-    eprintln!("  Phase 1/2: measuring encryption times ({} enc_ap)...", total_enc);
+    eprintln!(
+        "  Phase 1/2: measuring encryption times ({} enc_ap)...",
+        total_enc
+    );
     let mut enc_times_ns = Vec::with_capacity(total_enc);
     for (i, (enc_ap, _)) in ENC_APS.iter().enumerate() {
         let eap = AccessPolicy::parse(*enc_ap).unwrap();
         let start = std::time::Instant::now();
         for _ in 0..CSV_ITERATIONS {
-            let _ = PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::encrypt(
-                &cc, &mpk, &eap, PLAINTEXT,
-            )
-            .unwrap();
+            let _ =
+                PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::encrypt(&cc, &mpk, &eap, PLAINTEXT)
+                    .unwrap();
         }
         enc_times_ns.push((start.elapsed().as_nanos() / CSV_ITERATIONS as u128) as u64);
         eprintln!("    encryption {} / {}", i + 1, total_enc);
@@ -692,7 +656,10 @@ fn collect_benchmark_results_to_csv() -> Result<(), Box<dyn std::error::Error>> 
     }
 
     // Decryption times and CSV rows
-    eprintln!("  Phase 2/2: measuring decryption & writing CSV ({} rows)...", total_rows);
+    eprintln!(
+        "  Phase 2/2: measuring decryption & writing CSV ({} rows)...",
+        total_rows
+    );
     let mut rows_written = 0usize;
     for (enc_idx, (enc_ap, _cnt_enc)) in ENC_APS.iter().enumerate() {
         let eap = AccessPolicy::parse(*enc_ap).unwrap();
@@ -706,34 +673,26 @@ fn collect_benchmark_results_to_csv() -> Result<(), Box<dyn std::error::Error>> 
         for (usk_ap, _cnt_secret) in USK_APS.iter() {
             let uap = AccessPolicy::parse(*usk_ap).unwrap();
             let usk = cc.generate_user_secret_key(&mut msk, &uap).unwrap();
-            let ctx = PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::encrypt(
-                &cc,
-                &mpk,
-                &eap,
-                PLAINTEXT,
-            )
-            .unwrap();
+            let ctx =
+                PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::encrypt(&cc, &mpk, &eap, PLAINTEXT)
+                    .unwrap();
 
-            let decryption_result = if PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::decrypt(
-                &cc, &usk, &ctx,
-            )
-            .unwrap()
-            .is_some()
-            {
-                "success"
-            } else {
-                "fail"
-            };
+            let decryption_result =
+                if PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::decrypt(&cc, &usk, &ctx)
+                    .unwrap()
+                    .is_some()
+                {
+                    "success"
+                } else {
+                    "fail"
+                };
 
             let start = std::time::Instant::now();
             for _ in 0..CSV_ITERATIONS {
-                let _ = PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::decrypt(
-                    &cc, &usk, &ctx,
-                )
-                .unwrap();
+                let _ = PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::decrypt(&cc, &usk, &ctx)
+                    .unwrap();
             }
-            let decryption_ns =
-                (start.elapsed().as_nanos() / CSV_ITERATIONS as u128) as u64;
+            let decryption_ns = (start.elapsed().as_nanos() / CSV_ITERATIONS as u128) as u64;
 
             let line = format!(
                 "\"{}\",\"{}\",{},{},{},{}",
@@ -748,11 +707,19 @@ fn collect_benchmark_results_to_csv() -> Result<(), Box<dyn std::error::Error>> 
             println!("{}", line);
             rows_written += 1;
         }
-        eprintln!("    enc_ap {} / {} (rows {})", enc_idx + 1, total_enc, rows_written);
+        eprintln!(
+            "    enc_ap {} / {} (rows {})",
+            enc_idx + 1,
+            total_enc,
+            rows_written
+        );
         let _ = stderr().flush();
     }
 
-    eprintln!("Done. {} rows written to benchmark_results.csv", rows_written);
+    eprintln!(
+        "Done. {} rows written to benchmark_results.csv",
+        rows_written
+    );
     Ok(())
 }
 

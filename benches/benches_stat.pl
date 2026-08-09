@@ -35,7 +35,7 @@ for my $i (0 .. $#$rows) {
             my @user_ap_dims = split(/ && /, $user_ap);
             my %user_ap_dim = map { /(.*)::(.*)/  } @user_ap_dims;
             my $new_user_ap = join(" && ", map { $_."::".$user_ap_dim{$_} } grep { exists $user_ap_dim{$_} } @ap_dims);
-            my $etsi_user_ap = join(" && ", map {  exists $user_ap_dim{$_}? $_."::".$user_ap_dim{$_} : $_."::*" } @ap_dims);
+            my $etsi_user_ap = join(" && ", map {  exists $user_ap_dim{$_}? $_."::".$user_ap_dim{$_} : $_."::$" } @ap_dims);
             $row->{$col} = $new_user_ap;
             $row->{"etsi_user_ap"} = $etsi_user_ap;
            # print "  etsi_user_ap => ", $row->{"etsi_user_ap"} // "", "\n";

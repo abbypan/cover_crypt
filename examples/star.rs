@@ -1,7 +1,9 @@
 //! Example demonstrating complementary rights (comp_rights) generation
 //! for different access policies.
 
-use cosmian_cover_crypt::{AccessPolicy, AccessStructure, QualifiedAttribute, EncryptionHint, Error};
+use cosmian_cover_crypt::{
+    AccessPolicy, AccessStructure, EncryptionHint, Error, QualifiedAttribute,
+};
 use cosmian_crypto_core::bytes_ser_de::Deserializer;
 use std::collections::{HashMap, HashSet};
 
@@ -10,7 +12,7 @@ use std::collections::{HashMap, HashSet};
 // gives us a right containing just that attribute's ID
 fn build_id_to_attr_map(structure: &AccessStructure) -> HashMap<usize, String> {
     let mut id_map = HashMap::new();
-    
+
     // Generate rights for each attribute individually to find their IDs
     for attr in structure.attributes() {
         let ap_str = format!("{}::{}", attr.dimension, attr.name);
@@ -32,7 +34,7 @@ fn build_id_to_attr_map(structure: &AccessStructure) -> HashMap<usize, String> {
             }
         }
     }
-    
+
     id_map
 }
 
@@ -62,7 +64,7 @@ where
 {
     let mut sorted_rights: Vec<_> = rights.iter().collect();
     sorted_rights.sort();
-    
+
     for right in sorted_rights.iter() {
         let attrs = decode_right_to_attributes(&**right, id_map)?;
         if attrs.is_empty() {
@@ -77,10 +79,10 @@ where
 // Create a custom access structure with custom attributes
 fn create_custom_structure() -> Result<AccessStructure, Error> {
     let mut structure = AccessStructure::new();
-    
+
     // Create a hierarchical dimension for Security Level
     structure.add_hierarchy("Security".to_string())?;
-    
+
     // Add security levels (hierarchical - ordered)
     structure.add_attribute(
         QualifiedAttribute::new("Security", "LOW"),
@@ -97,15 +99,9 @@ fn create_custom_structure() -> Result<AccessStructure, Error> {
         EncryptionHint::Hybridized,
         Some("MED"), // After MED
     )?;
-    structure.add_attribute(
-        QualifiedAttribute::new("Security", "*"),
-        EncryptionHint::Hybridized,
-        Some("HIGH"), // After MED
-    )?;
-    
     // Create an anarchic dimension for Department
     structure.add_anarchy("Department".to_string())?;
-    
+
     // Add departments (anarchic - unordered)
     structure.add_attribute(
         QualifiedAttribute::new("Department", "DEV"),
@@ -117,15 +113,9 @@ fn create_custom_structure() -> Result<AccessStructure, Error> {
         EncryptionHint::Classic,
         None,
     )?;
-    structure.add_attribute(
-        QualifiedAttribute::new("Department", "*"),
-        EncryptionHint::Classic,
-        None,
-    )?;
-    
     // Create another anarchic dimension for Region
     structure.add_anarchy("Region".to_string())?;
-    
+
     structure.add_attribute(
         QualifiedAttribute::new("Region", "EN"),
         EncryptionHint::Classic,
@@ -136,12 +126,6 @@ fn create_custom_structure() -> Result<AccessStructure, Error> {
         EncryptionHint::Classic,
         None,
     )?;
-    structure.add_attribute(
-        QualifiedAttribute::new("Region", "*"),
-        EncryptionHint::Classic,
-        None,
-    )?;
-    
     Ok(structure)
 }
 
@@ -164,50 +148,66 @@ fn main() -> Result<(), Error> {
     {
         let ap_str = "(Department::DEV || Department::MKG) && Security::HIGH";
         let ap = AccessPolicy::parse(ap_str)?;
-             
+
         let comp_rights = structure.ap_to_usk_rights(&ap)?;
         let assoc_rights = structure.ap_to_enc_rights(&ap)?;
 
         println!("=== Test 1: Comparison (policy: {}) ===", ap_str);
-        println!("Associated rights (what the policy covers): {} right(s)", assoc_rights.len());
+        println!(
+            "Associated rights (what the policy covers): {} right(s)",
+            assoc_rights.len()
+        );
         print_rights(&assoc_rights, &id_map)?;
-        
-        println!("\nComplementary rights (what the policy does NOT cover): {} right(s)", comp_rights.len());
+
+        println!(
+            "\nComplementary rights (what the policy does NOT cover): {} right(s)",
+            comp_rights.len()
+        );
         print_rights(&comp_rights, &id_map)?;
         println!();
     }
-
 
     {
         let ap_str = "Department::DEV";
         let ap = AccessPolicy::parse(ap_str)?;
-             
+
         let comp_rights = structure.ap_to_usk_rights(&ap)?;
         let assoc_rights = structure.ap_to_enc_rights(&ap)?;
 
         println!("=== Test 2: Comparison (policy: {}) ===", ap_str);
-        println!("Associated rights (what the policy covers): {} right(s)", assoc_rights.len());
+        println!(
+            "Associated rights (what the policy covers): {} right(s)",
+            assoc_rights.len()
+        );
         print_rights(&assoc_rights, &id_map)?;
-        
-        println!("\nComplementary rights (what the policy does NOT cover): {} right(s)", comp_rights.len());
+
+        println!(
+            "\nComplementary rights (what the policy does NOT cover): {} right(s)",
+            comp_rights.len()
+        );
         print_rights(&comp_rights, &id_map)?;
         println!();
     }
-
 
     // Test 2: Simple single attribute policy
     {
         let ap_str = "Region::EN";
         let ap = AccessPolicy::parse(ap_str)?;
-            
+
         let comp_rights = structure.ap_to_usk_rights(&ap)?;
         let assoc_rights = structure.ap_to_enc_rights(&ap)?;
 
         println!("=== Test 2: Comparison (policy: {}) ===", ap_str);
-        println!("Associated rights (what the policy covers): {} right(s)", assoc_rights.len());
+        println!(
+            "Associated rights (what the policy covers): {} right(s)",
+            assoc_rights.len()
+        );
         print_rights(&assoc_rights, &id_map)?;
-        
-        println!("\nComplementary rights (what the policy does NOT cover): {} right(s)", comp_rights.len());
+
+        println!(
+            "\nComplementary rights (what the policy does NOT cover): {} right(s)",
+            comp_rights.len()
+        );
         print_rights(&comp_rights, &id_map)?;
         println!();
     }
@@ -216,15 +216,21 @@ fn main() -> Result<(), Error> {
     {
         let ap_str = "Security::LOW";
         let ap = AccessPolicy::parse(ap_str)?;
-            
+
         let comp_rights = structure.ap_to_usk_rights(&ap)?;
         let assoc_rights = structure.ap_to_enc_rights(&ap)?;
 
         println!("=== Test 3: Comparison (policy: {}) ===", ap_str);
-        println!("Associated rights (what the policy covers): {} right(s)", assoc_rights.len());
+        println!(
+            "Associated rights (what the policy covers): {} right(s)",
+            assoc_rights.len()
+        );
         print_rights(&assoc_rights, &id_map)?;
-        
-        println!("\nComplementary rights (what the policy does NOT cover): {} right(s)", comp_rights.len());
+
+        println!(
+            "\nComplementary rights (what the policy does NOT cover): {} right(s)",
+            comp_rights.len()
+        );
         print_rights(&comp_rights, &id_map)?;
         println!();
     }
@@ -233,15 +239,21 @@ fn main() -> Result<(), Error> {
     {
         let ap_str = "Security::MED && Region::FR";
         let ap = AccessPolicy::parse(ap_str)?;
-        
+
         let comp_rights = structure.ap_to_usk_rights(&ap)?;
         let assoc_rights = structure.ap_to_enc_rights(&ap)?;
 
         println!("=== Test 4: Comparison (policy: {}) ===", ap_str);
-        println!("Associated rights (what the policy covers): {} right(s)", assoc_rights.len());
+        println!(
+            "Associated rights (what the policy covers): {} right(s)",
+            assoc_rights.len()
+        );
         print_rights(&assoc_rights, &id_map)?;
-        
-        println!("\nComplementary rights (what the policy does NOT cover): {} right(s)", comp_rights.len());
+
+        println!(
+            "\nComplementary rights (what the policy does NOT cover): {} right(s)",
+            comp_rights.len()
+        );
         print_rights(&comp_rights, &id_map)?;
         println!();
     }
@@ -250,35 +262,44 @@ fn main() -> Result<(), Error> {
     {
         let ap_str = "Department::DEV && Security::MED && Region::FR";
         let ap = AccessPolicy::parse(ap_str)?;
-          
+
         let comp_rights = structure.ap_to_usk_rights(&ap)?;
         let assoc_rights = structure.ap_to_enc_rights(&ap)?;
 
         println!("=== Test 5: Comparison (policy: {}) ===", ap_str);
-        println!("Associated rights (what the policy covers): {} right(s)", assoc_rights.len());
+        println!(
+            "Associated rights (what the policy covers): {} right(s)",
+            assoc_rights.len()
+        );
         print_rights(&assoc_rights, &id_map)?;
-        
-        println!("\nComplementary rights (what the policy does NOT cover): {} right(s)", comp_rights.len());
+
+        println!(
+            "\nComplementary rights (what the policy does NOT cover): {} right(s)",
+            comp_rights.len()
+        );
         print_rights(&comp_rights, &id_map)?;
         println!();
     }
 
-
     {
-        let ap_str = "Security::MED && Region::FR && Department::*";
+        let ap_str = "Security::MED && Region::FR && Department::$";
         let ap = AccessPolicy::parse(ap_str)?;
-        
-        
 
         let comp_rights = structure.ap_to_usk_rights(&ap)?;
 
         let assoc_rights = structure.ap_to_enc_rights(&ap)?;
-      
+
         println!("=== Test 6: Comparison (policy: {}) ===", ap_str);
-        println!("Associated rights (what the policy covers): {} right(s)", assoc_rights.len());
+        println!(
+            "Associated rights (what the policy covers): {} right(s)",
+            assoc_rights.len()
+        );
         print_rights(&assoc_rights, &id_map)?;
-        
-        println!("\nComplementary rights (what the policy does NOT cover): {} right(s)", comp_rights.len());
+
+        println!(
+            "\nComplementary rights (what the policy does NOT cover): {} right(s)",
+            comp_rights.len()
+        );
         print_rights(&comp_rights, &id_map)?;
         println!();
     }
