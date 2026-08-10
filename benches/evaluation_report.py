@@ -14,11 +14,42 @@ from statistics import fmean
 
 
 EXPECTED = {
-    "pairs": 3713,
-    "same": 1692,
-    "different": 2021,
-    "groups": {"A": 224, "B": 800, "C": 997},
+    "pairs": 6241,
+    "same": 2844,
+    "different": 3397,
+    "oracle_positive": 1135,
+    "oracle_negative": 5106,
+    "groups": {"TP_TP": 275, "TN_TN": 1680, "TN_FP": 1442},
 }
+
+DIMENSIONS = ("SEC", "DPT", "CTR")
+SECURITY_RANK = {None: 0, "LOW": 1, "MED": 2, "HIG": 3, "$": 4}
+
+
+def policy_coordinates(policy: str) -> dict[str, str | None]:
+    """Parse one conjunction from the fixed paper corpus without Covercrypt."""
+    coordinates: dict[str, str | None] = dict.fromkeys(DIMENSIONS)
+    for term in policy.split(" && "):
+        dimension, value = term.split("::", 1)
+        if dimension not in coordinates or coordinates[dimension] is not None:
+            raise ValueError(f"invalid corpus policy: {policy}")
+        coordinates[dimension] = value
+    return coordinates
+
+
+def specification_allows(enc_policy: str, user_policy: str) -> bool:
+    """Evaluate SpecAuth for the paper corpus independently of both compilers."""
+    enc = policy_coordinates(enc_policy)
+    user = policy_coordinates(user_policy)
+    for dimension in DIMENSIONS:
+        requirement = enc[dimension]
+        grant = user[dimension]
+        if dimension == "SEC":
+            if SECURITY_RANK[grant] < SECURITY_RANK[requirement]:
+                return False
+        elif requirement is not None and grant != "$" and grant != requirement:
+            return False
+    return True
 
 
 def read_csv(path: Path) -> dict[tuple[str, str], dict[str, str]]:
@@ -67,6 +98,7 @@ def main() -> None:
     parser.add_argument("--lp", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--merged", type=Path, required=True)
+    parser.add_argument("--scenario", choices=["classic", "hybridized"], required=True)
     parser.add_argument("--workers", type=int, default=1)
     parser.add_argument("--pinned", choices=["0", "1"], default="0")
     args = parser.parse_args()
@@ -77,6 +109,10 @@ def main() -> None:
         raise ValueError("the two variants did not benchmark identical policy pairs")
     if len(cover) != EXPECTED["pairs"]:
         raise ValueError(f"expected {EXPECTED['pairs']} pairs, got {len(cover)}")
+    if {row["scenario"] for row in cover.values()} != {args.scenario}:
+        raise ValueError("Covercrypt rows do not match the requested scenario")
+    if {row["scenario"] for row in lp.values()} != {args.scenario}:
+        raise ValueError("LP-Covercrypt rows do not match the requested scenario")
 
     merged: list[dict[str, str]] = []
     for pair in sorted(cover):
@@ -86,19 +122,25 @@ def main() -> None:
             raise ValueError(f"Y classification differs for {pair}")
         c_outcome = c_row["decryption_result"]
         lp_outcome = lp_row["decryption_result"]
+        oracle_outcome = "success" if specification_allows(*pair) else "failure"
+        if lp_outcome != oracle_outcome:
+            raise ValueError(
+                f"LP result disagrees with the independent oracle for {pair}: "
+                f"oracle={oracle_outcome}, lp={lp_outcome}"
+            )
         if relation == "same" and c_row["user_rights"] != lp_row["user_rights"]:
             raise ValueError(f"same-Y rights count differs for {pair}")
         if relation == "different" and int(c_row["user_rights"]) <= int(lp_row["user_rights"]):
             raise ValueError(f"Covercrypt did not have a larger Y for {pair}")
 
-        if relation == "same":
+        if relation == "same" and c_outcome == oracle_outcome:
             group = "same"
-        elif c_outcome == "success" and lp_outcome == "success":
-            group = "A"
-        elif c_outcome == "failure" and lp_outcome == "failure":
-            group = "B"
-        elif c_outcome == "success" and lp_outcome == "failure":
-            group = "C"
+        elif oracle_outcome == "success" and c_outcome == "success":
+            group = "TP_TP"
+        elif oracle_outcome == "failure" and c_outcome == "failure":
+            group = "TN_TN"
+        elif oracle_outcome == "failure" and c_outcome == "success":
+            group = "TN_FP"
         else:
             group = "unexpected"
 
@@ -108,6 +150,7 @@ def main() -> None:
                 "user_ap": pair[1],
                 "y_relation": relation,
                 "group": group,
+                "oracle_outcome": oracle_outcome,
                 "covercrypt_rights": c_row["user_rights"],
                 "lp_rights": lp_row["user_rights"],
                 "covercrypt_outcome": c_outcome,
@@ -124,13 +167,21 @@ def main() -> None:
 
     same = [row for row in merged if row["group"] == "same"]
     different = [row for row in merged if row["y_relation"] == "different"]
+    oracle_positive = [row for row in merged if row["oracle_outcome"] == "success"]
+    oracle_negative = [row for row in merged if row["oracle_outcome"] == "failure"]
     grouped = defaultdict(list)
     for row in different:
         grouped[row["group"]].append(row)
 
     if len(same) != EXPECTED["same"] or len(different) != EXPECTED["different"]:
         raise ValueError("same/different Y pair counts do not match the paper corpus")
-    actual_groups = {name: len(grouped[name]) for name in ["A", "B", "C"]}
+    if (
+        len(oracle_positive) != EXPECTED["oracle_positive"]
+        or len(oracle_negative) != EXPECTED["oracle_negative"]
+    ):
+        raise ValueError("independent oracle counts do not match the paper corpus")
+    result_pairs = ["TP_TP", "TN_TN", "TN_FP"]
+    actual_groups = {name: len(grouped[name]) for name in result_pairs}
     if actual_groups != EXPECTED["groups"] or grouped["unexpected"]:
         raise ValueError(
             f"outcome groups do not match the paper: {actual_groups}, "
@@ -139,7 +190,7 @@ def main() -> None:
 
     same_outcomes = {}
     for outcome in ["success", "failure"]:
-        rows = [row for row in same if row["lp_outcome"] == outcome]
+        rows = [row for row in same if row["oracle_outcome"] == outcome]
         if any(row["covercrypt_outcome"] != outcome for row in rows):
             raise ValueError(f"same-Y {outcome} outcomes differ between variants")
         lp_us = average_us(rows, "lp")
@@ -152,7 +203,7 @@ def main() -> None:
         }
 
     group_results = {}
-    for name in ["A", "B", "C"]:
+    for name in result_pairs:
         rows = grouped[name]
         lp_us = average_us(rows, "lp")
         cover_us = average_us(rows, "covercrypt")
@@ -165,12 +216,15 @@ def main() -> None:
 
     iterations = int(next(iter(lp.values()))["iterations"])
     summary = {
+        "scenario": args.scenario,
         "baseline_ref": next(iter(cover.values()))["baseline_ref"],
         "iterations_per_pair": iterations,
         "policy_corpus": {
-            "ciphertext_policies": 47,
+            "ciphertext_policies": 79,
             "user_policies": 79,
             "pairs": len(merged),
+            "oracle_positive_pairs": len(oracle_positive),
+            "oracle_negative_pairs": len(oracle_negative),
             "same_y_pairs": len(same),
             "different_y_pairs": len(different),
         },

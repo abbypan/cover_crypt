@@ -37,8 +37,9 @@ git -C "$repo_dir" archive "$baseline_ref" | tar -x -C "$baseline_dir"
 cp "$repo_dir/examples/evaluation_benchmark.rs" "$baseline_dir/examples/evaluation_benchmark.rs"
 
 run_shards() {
-    local variant=$1
-    local binary=$2
+    local scenario=$1
+    local variant=$2
+    local binary=$3
     local -a pids=()
 
     for ((shard = 0; shard < jobs; shard++)); do
@@ -48,11 +49,12 @@ run_shards() {
         fi
         "${command[@]}" \
             --variant "$variant" \
+            --scenario "$scenario" \
             --iterations "$iterations" \
             --warmup "$warmup" \
             --shard-index "$shard" \
             --shard-count "$jobs" \
-            --output "$results_dir/$variant.part-$shard.csv" &
+            --output "$results_dir/$scenario-$variant.part-$shard.csv" &
         pids+=("$!")
     done
     local failed=0
@@ -66,10 +68,12 @@ run_shards() {
         return 1
     fi
 
-    head -n 1 "$results_dir/$variant.part-0.csv" > "$results_dir/$variant.csv"
+    head -n 1 "$results_dir/$scenario-$variant.part-0.csv" \
+        > "$results_dir/$scenario-$variant.csv"
     for ((shard = 0; shard < jobs; shard++)); do
-        tail -n +2 "$results_dir/$variant.part-$shard.csv" >> "$results_dir/$variant.csv"
-        rm "$results_dir/$variant.part-$shard.csv"
+        tail -n +2 "$results_dir/$scenario-$variant.part-$shard.csv" \
+            >> "$results_dir/$scenario-$variant.csv"
+        rm "$results_dir/$scenario-$variant.part-$shard.csv"
     done
 }
 
@@ -78,22 +82,31 @@ cargo build --quiet --release \
     --manifest-path "$baseline_dir/Cargo.toml" \
     --example evaluation_benchmark
 echo "Benchmarking original Covercrypt ($iterations iterations per pair, $jobs worker(s))"
-run_shards covercrypt "$baseline_dir/target/release/examples/evaluation_benchmark"
+for scenario in classic hybridized; do
+    run_shards "$scenario" covercrypt \
+        "$baseline_dir/target/release/examples/evaluation_benchmark"
+done
 
 echo "Building LP-Covercrypt"
 cargo build --quiet --release \
     --manifest-path "$repo_dir/Cargo.toml" \
     --example evaluation_benchmark
 echo "Benchmarking LP-Covercrypt ($iterations iterations per pair, $jobs worker(s))"
-run_shards lp-covercrypt "$repo_dir/target/release/examples/evaluation_benchmark"
+for scenario in classic hybridized; do
+    run_shards "$scenario" lp-covercrypt \
+        "$repo_dir/target/release/examples/evaluation_benchmark"
+done
 
-python3 "$repo_dir/benches/evaluation_report.py" \
-    --covercrypt "$results_dir/covercrypt.csv" \
-    --lp "$results_dir/lp-covercrypt.csv" \
-    --merged "$results_dir/pairs.csv" \
-    --output "$results_dir/summary.json" \
-    --workers "$jobs" \
-    --pinned "$pin_workers" \
-    | tee "$results_dir/summary.stdout.json"
+for scenario in classic hybridized; do
+    python3 "$repo_dir/benches/evaluation_report.py" \
+        --scenario "$scenario" \
+        --covercrypt "$results_dir/$scenario-covercrypt.csv" \
+        --lp "$results_dir/$scenario-lp-covercrypt.csv" \
+        --merged "$results_dir/$scenario-pairs.csv" \
+        --output "$results_dir/$scenario-summary.json" \
+        --workers "$jobs" \
+        --pinned "$pin_workers" \
+        | tee "$results_dir/$scenario-summary.stdout.json"
+done
 
 echo "Results written to $results_dir"

@@ -31,6 +31,7 @@ const PLAINTEXT: &[u8] = b"LP-Covercrypt evaluation benchmark";
 #[derive(Debug)]
 struct Config {
     variant: String,
+    scenario: Scenario,
     iterations: u32,
     warmup: u32,
     output: PathBuf,
@@ -38,14 +39,46 @@ struct Config {
     shard_count: usize,
 }
 
+#[derive(Clone, Copy, Debug)]
+enum Scenario {
+    Classic,
+    Hybridized,
+}
+
+impl Scenario {
+    fn parse(value: &str) -> Result<Self, String> {
+        match value {
+            "classic" => Ok(Self::Classic),
+            "hybridized" => Ok(Self::Hybridized),
+            _ => Err("--scenario must be classic or hybridized".to_string()),
+        }
+    }
+
+    fn name(self) -> &'static str {
+        match self {
+            Self::Classic => "classic",
+            Self::Hybridized => "hybridized",
+        }
+    }
+
+    fn hint(self) -> EncryptionHint {
+        match self {
+            Self::Classic => EncryptionHint::Classic,
+            Self::Hybridized => EncryptionHint::Hybridized,
+        }
+    }
+}
+
 fn usage() -> &'static str {
     "usage: evaluation_benchmark --variant <covercrypt|lp-covercrypt> \
+     --scenario <classic|hybridized> \
      --output <csv> [--iterations N] [--warmup N] \
      [--shard-index N --shard-count N]"
 }
 
 fn parse_args() -> Result<Config, String> {
     let mut variant = None;
+    let mut scenario = None;
     let mut iterations = DEFAULT_ITERATIONS;
     let mut warmup = DEFAULT_WARMUP;
     let mut output = None;
@@ -55,8 +88,8 @@ fn parse_args() -> Result<Config, String> {
 
     while let Some(arg) = args.next() {
         let value = match arg.as_str() {
-            "--variant" | "--output" | "--iterations" | "--warmup" | "--shard-index"
-            | "--shard-count" => args
+            "--variant" | "--scenario" | "--output" | "--iterations" | "--warmup"
+            | "--shard-index" | "--shard-count" => args
                 .next()
                 .ok_or_else(|| format!("missing value after {arg}"))?,
             "--help" | "-h" => return Err(usage().to_string()),
@@ -65,6 +98,7 @@ fn parse_args() -> Result<Config, String> {
 
         match arg.as_str() {
             "--variant" => variant = Some(value),
+            "--scenario" => scenario = Some(Scenario::parse(&value)?),
             "--output" => output = Some(PathBuf::from(value)),
             "--iterations" => {
                 iterations = value
@@ -103,6 +137,7 @@ fn parse_args() -> Result<Config, String> {
 
     Ok(Config {
         variant,
+        scenario: scenario.ok_or_else(|| format!("--scenario is required\n{}", usage()))?,
         iterations,
         warmup,
         output: output.ok_or_else(|| format!("--output is required\n{}", usage()))?,
@@ -122,65 +157,43 @@ fn has_attribute(structure: &AccessStructure, dimension: &str, name: &str) -> bo
 fn add_baseline_maximum(
     structure: &mut AccessStructure,
     dimension: &str,
+    hint: EncryptionHint,
     after: Option<&str>,
 ) -> Result<(), Error> {
     if !has_attribute(structure, dimension, MAXIMUM) {
-        structure.add_attribute(
-            QualifiedAttribute::new(dimension, MAXIMUM),
-            EncryptionHint::Classic,
-            after,
-        )?;
+        structure.add_attribute(QualifiedAttribute::new(dimension, MAXIMUM), hint, after)?;
     }
     Ok(())
 }
 
-fn create_evaluation_structure() -> Result<AccessStructure, Error> {
+fn create_evaluation_structure(scenario: Scenario) -> Result<AccessStructure, Error> {
     let mut structure = AccessStructure::new();
+    let hint = scenario.hint();
 
     structure.add_hierarchy("SEC".to_string())?;
-    structure.add_attribute(
-        QualifiedAttribute::new("SEC", "LOW"),
-        EncryptionHint::Classic,
-        None,
-    )?;
-    structure.add_attribute(
-        QualifiedAttribute::new("SEC", "MED"),
-        EncryptionHint::Classic,
-        Some("LOW"),
-    )?;
-    structure.add_attribute(
-        QualifiedAttribute::new("SEC", "HIG"),
-        EncryptionHint::Hybridized,
-        Some("MED"),
-    )?;
-    add_baseline_maximum(&mut structure, "SEC", Some("HIG"))?;
+    structure.add_attribute(QualifiedAttribute::new("SEC", "LOW"), hint, None)?;
+    structure.add_attribute(QualifiedAttribute::new("SEC", "MED"), hint, Some("LOW"))?;
+    structure.add_attribute(QualifiedAttribute::new("SEC", "HIG"), hint, Some("MED"))?;
+    add_baseline_maximum(&mut structure, "SEC", hint, Some("HIG"))?;
 
     structure.add_anarchy("DPT".to_string())?;
     for value in ["DEV", "MKG"] {
-        structure.add_attribute(
-            QualifiedAttribute::new("DPT", value),
-            EncryptionHint::Classic,
-            None,
-        )?;
+        structure.add_attribute(QualifiedAttribute::new("DPT", value), hint, None)?;
     }
-    add_baseline_maximum(&mut structure, "DPT", None)?;
+    add_baseline_maximum(&mut structure, "DPT", hint, None)?;
 
     structure.add_anarchy("CTR".to_string())?;
     for value in ["EN", "FR"] {
-        structure.add_attribute(
-            QualifiedAttribute::new("CTR", value),
-            EncryptionHint::Classic,
-            None,
-        )?;
+        structure.add_attribute(QualifiedAttribute::new("CTR", value), hint, None)?;
     }
-    add_baseline_maximum(&mut structure, "CTR", None)?;
+    add_baseline_maximum(&mut structure, "CTR", hint, None)?;
 
     Ok(structure)
 }
 
-fn setup(cc: &Covercrypt) -> Result<(MasterSecretKey, MasterPublicKey), Error> {
+fn setup(cc: &Covercrypt, scenario: Scenario) -> Result<(MasterSecretKey, MasterPublicKey), Error> {
     let (mut msk, _) = cc.setup()?;
-    msk.access_structure = create_evaluation_structure()?;
+    msk.access_structure = create_evaluation_structure(scenario)?;
     let mpk = cc.update_msk(&mut msk)?;
     Ok((msk, mpk))
 }
@@ -214,10 +227,10 @@ fn policies(
 }
 
 fn encryption_policies() -> Vec<String> {
-    // 3 * 4 * 4 - 1 = 47.  SEC::HIG and SEC::$ are excluded because they
-    // select hybridized encryption; the paper evaluates classical ciphertexts.
+    // 5 * 4 * 4 - 1 = 79.  The all-bottom tuple is the global broadcast
+    // policy and is excluded from the dimension-level corpus.
     policies(
-        &[None, Some("LOW"), Some("MED")],
+        &[None, Some("LOW"), Some("MED"), Some("HIG"), Some(MAXIMUM)],
         &[None, Some("DEV"), Some("MKG"), Some(MAXIMUM)],
         &[None, Some("EN"), Some("FR"), Some(MAXIMUM)],
     )
@@ -257,16 +270,16 @@ fn csv_field(value: &str) -> String {
 fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
     let enc_policies = encryption_policies();
     let usk_policies = user_policies();
-    assert_eq!(enc_policies.len(), 47);
+    assert_eq!(enc_policies.len(), 79);
     assert_eq!(usk_policies.len(), 79);
 
     let cc = Covercrypt::default();
-    let (mut msk, mpk) = setup(&cc)?;
+    let (mut msk, mpk) = setup(&cc, config.scenario)?;
     let output = File::create(&config.output)?;
     let mut output = BufWriter::new(output);
     writeln!(
         output,
-        "variant,baseline_ref,enc_ap,user_ap,y_relation,user_rights,user_key_bytes,ciphertext_bytes,decryption_result,iterations,total_ns,mean_ns"
+        "scenario,variant,baseline_ref,enc_ap,user_ap,y_relation,user_rights,user_key_bytes,ciphertext_bytes,decryption_result,iterations,total_ns,mean_ns"
     )?;
 
     let selected_enc_policies = enc_policies
@@ -278,7 +291,8 @@ fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
     let total_pairs = selected_enc_policies.len() * usk_policies.len();
     let mut pair_index = 0usize;
     eprintln!(
-        "{} shard {}/{}: {} ciphertext policies x {} user policies = {} pairs; {} iterations/pair",
+        "{} {} shard {}/{}: {} ciphertext policies x {} user policies = {} pairs; {} iterations/pair",
+        config.scenario.name(),
         config.variant,
         config.shard_index + 1,
         config.shard_count,
@@ -346,7 +360,8 @@ fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
 
             writeln!(
                 output,
-                "{},{},{},{},{},{},{},{},{},{},{},{:.3}",
+                "{},{},{},{},{},{},{},{},{},{},{},{},{:.3}",
+                config.scenario.name(),
                 config.variant,
                 BASELINE_REF,
                 csv_field(enc_policy),
