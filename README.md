@@ -54,6 +54,25 @@ Cargo may need network access on the first run to download dependencies. The
 runner creates an isolated temporary checkout for the baseline and removes it
 when the run finishes.
 
+## Validate Boolean-policy semantics
+
+Run the compiler-independent small-model and scaling checks before the timed
+benchmark:
+
+```bash
+cargo test test_exhaustive_small_model_semantics_144_policies
+cargo test test_missing_dimension_scaling_matches_cartesian_product
+cargo run --release --example compiler_scaling
+```
+
+The first command compares exact ciphertext/key right sets and all 20,736
+authorization decisions for 144 policies covering disjunction, DNF expansion,
+deduplication, subsumption, repeated hierarchical values, explicit maxima, and
+mixed broadcast. It also checks rejection of unknown names and incompatible
+anarchic conjunctions. The second checks the
+predicted Cartesian-product growth on synthetic structures with two through
+five dimensions; the release example reports the corresponding compiler cost.
+
 ## Quick smoke test
 
 The smoke test builds both implementations and processes the complete policy
@@ -91,6 +110,10 @@ RESULTS_DIR="$PWD/benchmark-results" \
 benches/run_evaluation.sh
 ```
 
+The archived paper data are in `benchmark-results/`. Its checked-in
+raw CSVs use an earlier schema, but the current report program deliberately
+supports it and marks fields that were not recorded instead of inventing them.
+
 For uncontended single-core latency, use `JOBS=1` and leave
 `PIN_WORKERS=0`. Those results will not reproduce the paper's 12-worker
 execution environment.
@@ -109,6 +132,10 @@ Use a quiet machine with a fixed performance policy when comparing latency.
 Record the current commit and avoid changing the source during the run. The
 generated summary records the OS, CPU, memory, Rust/Cargo versions, worker
 count, pinning status, current commit, and whether the working tree is dirty.
+The paper artifact is one fixed-order batch (Covercrypt first, LP-Covercrypt
+second), not an independently repeated latency study. Its timing percentages
+are descriptive observations without confidence intervals; use repeated runs
+with reversed order and `JOBS=1` before drawing performance conclusions.
 
 ## What the runner does
 
@@ -142,7 +169,7 @@ For each of `classic` and `hybridized`, the output directory contains:
 | `<scenario>-covercrypt.csv` | Raw measurements from Covercrypt v15 |
 | `<scenario>-lp-covercrypt.csv` | Raw measurements from LP-Covercrypt |
 | `<scenario>-pairs.csv` | Joined per-pair results and classifications |
-| `<scenario>-summary.json` | Validated aggregate values and environment metadata |
+| `<scenario>-summary.json` | Validated aggregates, no-`$` sensitivity results, and environment metadata |
 | `<scenario>-summary.stdout.json` | Copy of the summary printed during the run |
 
 Inspect the two primary summaries with:
@@ -150,6 +177,24 @@ Inspect the two primary summaries with:
 ```bash
 python3 -m json.tool benchmark-results/classic-summary.json
 python3 -m json.tool benchmark-results/hybridized-summary.json
+```
+
+The summaries can be rebuilt from the stored raw rows without rerunning
+cryptography:
+
+```bash
+for scenario in classic hybridized; do
+  python3 benches/evaluation_report.py \
+    --scenario "$scenario" \
+    --covercrypt "benchmark-results/$scenario-covercrypt.csv" \
+    --lp "benchmark-results/$scenario-lp-covercrypt.csv" \
+    --merged "benchmark-results/$scenario-pairs.csv" \
+    --output "benchmark-results/$scenario-summary.json" \
+    --environment-from-summary \
+      "benchmark-results/$scenario-summary.json" \
+    --workers 12 --pinned 1 \
+    | tee "benchmark-results/$scenario-summary.stdout.json"
+done
 ```
 
 Latency is reported as mean nanoseconds in raw CSV rows and mean microseconds

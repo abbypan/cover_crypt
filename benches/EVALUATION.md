@@ -1,14 +1,28 @@
 # Paper evaluation benchmark
 
+Validate the Boolean-language compiler before running the timed corpus:
+
+```sh
+cargo test test_exhaustive_small_model_semantics_144_policies
+cargo test test_missing_dimension_scaling_matches_cartesian_product
+cargo run --release --example compiler_scaling
+```
+
+These checks compare the implementation with an independently encoded finite
+model over 144 valid policies and 20,736 decisions, exercise invalid-input
+rejection, and report cardinality and compilation cost through five synthetic
+dimensions.
+
 Run the complete experiment from the repository root:
 
 ```sh
 benches/run_evaluation.sh
 ```
 
-The default run measures every policy pair 20 times and writes raw and
-aggregated results to `benchmark-results/`. For a quick structural check, use
-fewer iterations without changing the corpus:
+The default run measures every policy pair 2,000 times and writes raw and
+aggregated results to the flat `benchmark-results/` directory, which also
+contains the archived paper artifact. For a quick structural check, use fewer
+iterations without changing the corpus:
 
 ```sh
 ITERATIONS=1 WARMUP=0 RESULTS_DIR=/tmp/covercrypt-smoke \
@@ -44,14 +58,15 @@ SEC/DPT/CTR conjunctions and applies their declared orders without consulting
 either compiler or decryption result. The report is rejected if an
 LP-Covercrypt result disagrees with its oracle label.
 
-Before randomized encapsulation, each binary calls its public
-`ap_to_enc_rights` implementation for every ciphertext policy. The runner
-sorts the canonical `Right` byte encodings and stores them in
-`ciphertext_rights_hex`. Attribute identifiers are assigned in the same order
-in both access structures, including the v15 adapter's explicit maxima. The
-report generator rejects the experiment unless each implementation is stable
-across all repeated rows and the two compiled right sets are equal for all 79
-ciphertext policies. The validated result is also written to each summary.
+Before randomized encapsulation, a current-schema binary calls its public
+`ap_to_enc_rights` implementation for every ciphertext policy. The runner sorts
+the canonical `Right` byte encodings and stores each implementation's value in
+`ciphertext_rights_hex`. The report checks stability within each implementation
+and records whether the sets happen to be equal on these 79 normalized
+single-conjunction policies. This observation is not a claim of compiler
+equality for general Boolean policies: LP may normalize and subsume redundant
+v15 clauses. Historical raw CSVs without this field remain reportable and are
+explicitly marked as lacking canonical-right evidence.
 
 Release `089a548` predates the structural maximum attribute. For the baseline
 only, an explicit maximum in an anarchic dimension is expanded to a disjunction
@@ -61,9 +76,9 @@ being compared--unchanged. Translation, parsing, rights compilation, key
 generation, and warm-up all occur before `Instant::now()`; only repeated
 decryption is timed.
 
-For each policy pair and binary, one timer encloses exactly 20 calls to the same
+For each policy pair and binary, one timer encloses exactly 2,000 calls to the same
 public `PkeAc::decrypt` method over an already-built key and ciphertext. The raw
-row stores the loop total and its per-pair mean (`total_ns / 20`). Each Table 5
+row stores the loop total and its per-pair mean (`total_ns / 2,000`). Each Table 5
 stratum is the unweighted arithmetic mean of those per-pair means, so every
 policy pair has equal weight. Because every pair uses the same count, this is
 also the arithmetic mean over all timed calls in the stratum, although
@@ -72,12 +87,19 @@ same external setup boundaries. Their internal paths differ: a success derives
 the authenticated-encryption key and decrypts the AES-256-GCM payload after
 decapsulation, whereas a failure returns `None` after decapsulation.
 
+The archived paper timing is one fixed-order batch: all baseline measurements
+precede all LP measurements, and no independent batch samples or confidence
+intervals are available. Treat its percentages as descriptive. Performance
+claims require repeated batches, reversed or randomized implementation order,
+and an uncontended `JOBS=1` sensitivity run.
+
 Generated files:
 
 - `<scenario>-covercrypt.csv` and `<scenario>-lp-covercrypt.csv`: raw per-pair
   measurements, including both `user_ap` and the exact
   `implementation_user_ap` passed to that binary, plus the sorted canonical
   ciphertext-right encoding;
-- `<scenario>-pairs.csv`: joined measurements, both implementation policies,
-  and group assignments;
-- `<scenario>-summary.json`: validated table values and environment metadata.
+- `<scenario>-pairs.csv`: joined measurements, both implementation policies
+  when recorded by the raw schema, and group assignments;
+- `<scenario>-summary.json`: validated table values, the adapter-free subset
+  excluding `$` from both source policies, and environment metadata.

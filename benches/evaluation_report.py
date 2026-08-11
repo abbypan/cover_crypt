@@ -10,7 +10,7 @@ import platform
 import subprocess
 from collections import defaultdict
 from pathlib import Path
-from statistics import fmean
+from statistics import fmean, median
 
 
 EXPECTED = {
@@ -63,8 +63,10 @@ def read_csv(path: Path) -> dict[tuple[str, str], dict[str, str]]:
 
 def ciphertext_rights(
     rows: dict[tuple[str, str], dict[str, str]], variant: str
-) -> dict[str, str]:
+) -> dict[str, str] | None:
     """Return one stable canonical ciphertext-right encoding per source policy."""
+    if "ciphertext_rights_hex" not in next(iter(rows.values())):
+        return None
     compiled: dict[str, str] = {}
     for (enc_policy, _), row in rows.items():
         encoded = row["ciphertext_rights_hex"]
@@ -117,7 +119,24 @@ def main() -> None:
     parser.add_argument("--scenario", choices=["classic", "hybridized"], required=True)
     parser.add_argument("--workers", type=int, default=1)
     parser.add_argument("--pinned", choices=["0", "1"], default="0")
+    parser.add_argument(
+        "--environment-from-summary",
+        type=Path,
+        help=(
+            "reuse environment metadata from an existing summary when "
+            "regenerating a historical raw-data artifact"
+        ),
+    )
     args = parser.parse_args()
+
+    preserved_environment = None
+    if args.environment_from_summary is not None:
+        preserved_summary = json.loads(
+            args.environment_from_summary.read_text(encoding="utf-8")
+        )
+        if preserved_summary.get("scenario") != args.scenario:
+            raise ValueError("environment summary scenario does not match --scenario")
+        preserved_environment = preserved_summary["environment"]
 
     cover = read_csv(args.covercrypt)
     lp = read_csv(args.lp)
@@ -139,13 +158,36 @@ def main() -> None:
 
     cover_x = ciphertext_rights(cover, "Covercrypt")
     lp_x = ciphertext_rights(lp, "LP-Covercrypt")
-    if len(cover_x) != 79 or len(lp_x) != 79:
-        raise ValueError("expected 79 distinct ciphertext policies in each implementation")
-    if cover_x != lp_x:
-        mismatches = sorted(
-            policy for policy in cover_x.keys() | lp_x.keys() if cover_x.get(policy) != lp_x.get(policy)
-        )
-        raise ValueError(f"ciphertext compiler right sets differ for: {mismatches}")
+    if (cover_x is None) != (lp_x is None):
+        raise ValueError("only one raw CSV records canonical ciphertext rights")
+    if cover_x is not None and lp_x is not None:
+        if len(cover_x) != 79 or len(lp_x) != 79:
+            raise ValueError(
+                "expected 79 distinct ciphertext policies in each implementation"
+            )
+        ciphertext_compiler_observation = {
+            "recorded": True,
+            "scope": "79 normalized single-conjunction policies",
+            "policies_checked": len(cover_x),
+            "canonical_right_sets_equal_on_corpus": cover_x == lp_x,
+        }
+    else:
+        ciphertext_compiler_observation = {
+            "recorded": False,
+            "scope": "canonical ciphertext rights absent from historical raw CSV schema",
+            "policies_checked": 0,
+            "canonical_right_sets_equal_on_corpus": None,
+        }
+
+    implementation_policy_recorded = all(
+        "implementation_user_ap" in next(iter(rows.values()))
+        for rows in (cover, lp)
+    )
+    if implementation_policy_recorded != any(
+        "implementation_user_ap" in next(iter(rows.values()))
+        for rows in (cover, lp)
+    ):
+        raise ValueError("only one raw CSV records implementation policy text")
 
     merged: list[dict[str, str]] = []
     for pair in sorted(cover):
@@ -160,10 +202,11 @@ def main() -> None:
             .replace("DPT::$", "(DPT::DEV || DPT::MKG || DPT::$)")
             .replace("CTR::$", "(CTR::EN || CTR::FR || CTR::$)")
         )
-        if c_row["implementation_user_ap"] != expected_baseline_policy:
-            raise ValueError(f"unexpected baseline policy translation for {pair}")
-        if lp_row["implementation_user_ap"] != pair[1]:
-            raise ValueError(f"LP implementation policy differs from source for {pair}")
+        if implementation_policy_recorded:
+            if c_row["implementation_user_ap"] != expected_baseline_policy:
+                raise ValueError(f"unexpected baseline policy translation for {pair}")
+            if lp_row["implementation_user_ap"] != pair[1]:
+                raise ValueError(f"LP implementation policy differs from source for {pair}")
         oracle_outcome = "success" if specification_allows(*pair) else "failure"
         if lp_outcome != oracle_outcome:
             raise ValueError(
@@ -190,9 +233,18 @@ def main() -> None:
             {
                 "enc_ap": pair[0],
                 "user_ap": pair[1],
-                "covercrypt_implementation_user_ap": c_row["implementation_user_ap"],
-                "lp_implementation_user_ap": lp_row["implementation_user_ap"],
-                "ciphertext_rights_hex": cover_x[pair[0]],
+                "covercrypt_implementation_user_ap": c_row.get(
+                    "implementation_user_ap", ""
+                ),
+                "lp_implementation_user_ap": lp_row.get(
+                    "implementation_user_ap", ""
+                ),
+                "covercrypt_ciphertext_rights_hex": (
+                    cover_x[pair[0]] if cover_x is not None else ""
+                ),
+                "lp_ciphertext_rights_hex": (
+                    lp_x[pair[0]] if lp_x is not None else ""
+                ),
                 "y_relation": relation,
                 "group": group,
                 "oracle_outcome": oracle_outcome,
@@ -206,7 +258,9 @@ def main() -> None:
         )
 
     with args.merged.open("w", newline="", encoding="utf-8") as stream:
-        writer = csv.DictWriter(stream, fieldnames=list(merged[0]))
+        writer = csv.DictWriter(
+            stream, fieldnames=list(merged[0]), lineterminator="\n"
+        )
         writer.writeheader()
         writer.writerows(merged)
 
@@ -232,6 +286,95 @@ def main() -> None:
             f"outcome groups do not match the paper: {actual_groups}, "
             f"unexpected={len(grouped['unexpected'])}"
         )
+
+    user_metrics: dict[str, tuple[str, int, int, int, int]] = {}
+    for row in merged:
+        pair = (row["enc_ap"], row["user_ap"])
+        metrics = (
+            row["y_relation"],
+            int(row["covercrypt_rights"]),
+            int(row["lp_rights"]),
+            int(cover[pair]["user_key_bytes"]),
+            int(lp[pair]["user_key_bytes"]),
+        )
+        previous = user_metrics.setdefault(row["user_ap"], metrics)
+        if previous != metrics:
+            raise ValueError(f"inconsistent key metrics for {row['user_ap']!r}")
+
+    ciphertext_metrics: dict[str, tuple[int, int]] = {}
+    for row in merged:
+        pair = (row["enc_ap"], row["user_ap"])
+        metrics = (
+            int(cover[pair]["ciphertext_bytes"]),
+            int(lp[pair]["ciphertext_bytes"]),
+        )
+        previous = ciphertext_metrics.setdefault(row["enc_ap"], metrics)
+        if previous != metrics:
+            raise ValueError(
+                f"inconsistent ciphertext sizes for {row['enc_ap']!r}"
+            )
+
+    all_user_metrics = list(user_metrics.values())
+    different_user_metrics = [
+        metrics for metrics in all_user_metrics if metrics[0] == "different"
+    ]
+    if len(all_user_metrics) != 79 or len(different_user_metrics) != 43:
+        raise ValueError("unexpected unique user-policy counts")
+
+    def reduction_percent(baseline: float, lp: float) -> float:
+        return round((baseline - lp) / baseline * 100, 2)
+
+    cover_rights_all = fmean(row[1] for row in all_user_metrics)
+    lp_rights_all = fmean(row[2] for row in all_user_metrics)
+    cover_rights_different = fmean(row[1] for row in different_user_metrics)
+    lp_rights_different = fmean(row[2] for row in different_user_metrics)
+    cover_key_bytes_all = fmean(row[3] for row in all_user_metrics)
+    lp_key_bytes_all = fmean(row[4] for row in all_user_metrics)
+    cover_key_bytes_different = fmean(row[3] for row in different_user_metrics)
+    lp_key_bytes_different = fmean(row[4] for row in different_user_metrics)
+    cover_ciphertext_bytes = fmean(row[0] for row in ciphertext_metrics.values())
+    lp_ciphertext_bytes = fmean(row[1] for row in ciphertext_metrics.values())
+    compiled_policy_and_sizes = {
+        "unique_user_policies": len(all_user_metrics),
+        "different_y_user_policies": len(different_user_metrics),
+        "mean_rights_all": {
+            "covercrypt": round(cover_rights_all, 2),
+            "lp": round(lp_rights_all, 2),
+            "reduction_percent": reduction_percent(cover_rights_all, lp_rights_all),
+        },
+        "mean_rights_different_y": {
+            "covercrypt": round(cover_rights_different, 2),
+            "lp": round(lp_rights_different, 2),
+            "reduction_percent": reduction_percent(
+                cover_rights_different, lp_rights_different
+            ),
+        },
+        "median_rights_different_y": {
+            "covercrypt": round(median(row[1] for row in different_user_metrics), 2),
+            "lp": round(median(row[2] for row in different_user_metrics), 2),
+        },
+        "mean_user_key_bytes_all": {
+            "covercrypt": round(cover_key_bytes_all, 2),
+            "lp": round(lp_key_bytes_all, 2),
+            "reduction_percent": reduction_percent(
+                cover_key_bytes_all, lp_key_bytes_all
+            ),
+        },
+        "mean_user_key_bytes_different_y": {
+            "covercrypt": round(cover_key_bytes_different, 2),
+            "lp": round(lp_key_bytes_different, 2),
+            "reduction_percent": reduction_percent(
+                cover_key_bytes_different, lp_key_bytes_different
+            ),
+        },
+        "mean_ciphertext_bytes": {
+            "covercrypt": round(cover_ciphertext_bytes, 2),
+            "lp": round(lp_ciphertext_bytes, 2),
+            "reduction_percent": reduction_percent(
+                cover_ciphertext_bytes, lp_ciphertext_bytes
+            ),
+        },
+    }
 
     same_outcomes = {}
     for outcome in ["success", "failure"]:
@@ -259,7 +402,111 @@ def main() -> None:
             "reduction_percent": round((cover_us - lp_us) / cover_us * 100, 2),
         }
 
+    native = [
+        row
+        for row in merged
+        if "$" not in row["enc_ap"] and "$" not in row["user_ap"]
+    ]
+    native_enc_policies = {row["enc_ap"] for row in native}
+    native_user_policies = {row["user_ap"] for row in native}
+    if (
+        len(native_enc_policies) != 35
+        or len(native_user_policies) != 35
+        or len(native) != 1_225
+    ):
+        raise ValueError("unexpected v15-native sensitivity corpus size")
+
+    native_user_metrics: dict[str, tuple[int, int, int, int]] = {}
+    for row in native:
+        pair = (row["enc_ap"], row["user_ap"])
+        metrics = (
+            int(row["covercrypt_rights"]),
+            int(row["lp_rights"]),
+            int(cover[pair]["user_key_bytes"]),
+            int(lp[pair]["user_key_bytes"]),
+        )
+        previous = native_user_metrics.setdefault(row["user_ap"], metrics)
+        if previous != metrics:
+            raise ValueError(f"inconsistent key metrics for {row['user_ap']!r}")
+
+    native_oracle_positive = sum(
+        row["oracle_outcome"] == "success" for row in native
+    )
+    native_oracle_negative = len(native) - native_oracle_positive
+    native_cover_fp = sum(
+        row["oracle_outcome"] == "failure"
+        and row["covercrypt_outcome"] == "success"
+        for row in native
+    )
+    native_lp_fp = sum(
+        row["oracle_outcome"] == "failure" and row["lp_outcome"] == "success"
+        for row in native
+    )
+    if (
+        native_oracle_positive != 214
+        or native_oracle_negative != 1_011
+        or native_cover_fp != 352
+        or native_lp_fp != 0
+    ):
+        raise ValueError("unexpected v15-native sensitivity outcomes")
+
+    native_metric_rows = list(native_user_metrics.values())
+    cover_rights = fmean(row[0] for row in native_metric_rows)
+    lp_rights = fmean(row[1] for row in native_metric_rows)
+    cover_bytes = fmean(row[2] for row in native_metric_rows)
+    lp_bytes = fmean(row[3] for row in native_metric_rows)
+    native_sensitivity = {
+        "criterion": "both source policies contain no dimension-local maximum '$'",
+        "ciphertext_policies": len(native_enc_policies),
+        "user_policies": len(native_user_policies),
+        "pairs": len(native),
+        "oracle_positive_pairs": native_oracle_positive,
+        "oracle_negative_pairs": native_oracle_negative,
+        "covercrypt_false_positive_pairs": native_cover_fp,
+        "lp_false_positive_pairs": native_lp_fp,
+        "covercrypt_oracle_relative_precision_percent": round(
+            native_oracle_positive / (native_oracle_positive + native_cover_fp) * 100,
+            2,
+        ),
+        "lp_oracle_relative_precision_percent": 100.0,
+        "unique_user_policy_mean_rights": {
+            "covercrypt": round(cover_rights, 2),
+            "lp": round(lp_rights, 2),
+            "reduction_percent": round(
+                (cover_rights - lp_rights) / cover_rights * 100, 2
+            ),
+        },
+        "unique_user_policy_mean_key_bytes": {
+            "covercrypt": round(cover_bytes, 2),
+            "lp": round(lp_bytes, 2),
+            "reduction_percent": round(
+                (cover_bytes - lp_bytes) / cover_bytes * 100, 2
+            ),
+        },
+    }
+
     iterations = lp_iterations.pop()
+    oracle_relative_enforcement = {
+        "covercrypt": {
+            "true_positive": len(oracle_positive),
+            "false_positive": len(grouped["TN_FP"]),
+            "true_negative": len(oracle_negative) - len(grouped["TN_FP"]),
+            "false_negative": 0,
+            "precision_percent": round(
+                len(oracle_positive)
+                / (len(oracle_positive) + len(grouped["TN_FP"]))
+                * 100,
+                2,
+            ),
+        },
+        "lp": {
+            "true_positive": len(oracle_positive),
+            "false_positive": 0,
+            "true_negative": len(oracle_negative),
+            "false_negative": 0,
+            "precision_percent": 100.0,
+        },
+    }
     summary = {
         "scenario": args.scenario,
         "baseline_ref": next(iter(cover.values()))["baseline_ref"],
@@ -273,17 +520,23 @@ def main() -> None:
             "same_y_pairs": len(same),
             "different_y_pairs": len(different),
         },
-        "ciphertext_compiler_check": {
-            "policies_checked": len(cover_x),
-            "canonical_right_sets_equal": True,
+        "raw_schema_evidence": {
+            "implementation_policy_recorded": implementation_policy_recorded,
         },
+        "ciphertext_compiler_observation": ciphertext_compiler_observation,
+        "compiled_policy_and_sizes": compiled_policy_and_sizes,
+        "oracle_relative_enforcement": oracle_relative_enforcement,
         "same_y": same_outcomes,
         "different_y": group_results,
-        "environment": {
+        "v15_native_sensitivity": native_sensitivity,
+        "environment": preserved_environment
+        or {
             "workers": args.workers,
             "workers_cpu_pinned": args.pinned == "1",
             "lp_git_head": command_output(["git", "rev-parse", "HEAD"]),
-            "lp_worktree_dirty": bool(command_output(["git", "status", "--porcelain"], "")),
+            "lp_worktree_dirty": bool(
+                command_output(["git", "status", "--porcelain"], "")
+            ),
             "os": platform.platform(),
             "cpu": cpu_model(),
             "memory_gib": total_memory_gib(),

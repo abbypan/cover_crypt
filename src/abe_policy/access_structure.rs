@@ -796,4 +796,363 @@ mod tests {
         );
         Ok(())
     }
+
+    #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+    enum ModelSec {
+        Bottom,
+        Low,
+        High,
+        Maximum,
+    }
+
+    #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+    enum ModelDpt {
+        Bottom,
+        Dev,
+        Mkg,
+        Maximum,
+    }
+
+    #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+    struct ModelClause {
+        sec: ModelSec,
+        dpt: ModelDpt,
+    }
+
+    fn model_clause_source(clause: ModelClause) -> String {
+        let mut terms = Vec::new();
+        match clause.sec {
+            ModelSec::Bottom => {}
+            ModelSec::Low => terms.push("SEC::LOW"),
+            ModelSec::High => terms.push("SEC::HIG"),
+            ModelSec::Maximum => terms.push("SEC::$"),
+        }
+        match clause.dpt {
+            ModelDpt::Bottom => {}
+            ModelDpt::Dev => terms.push("DPT::DEV"),
+            ModelDpt::Mkg => terms.push("DPT::MKG"),
+            ModelDpt::Maximum => terms.push("DPT::$"),
+        }
+        if terms.is_empty() {
+            "*".to_string()
+        } else {
+            terms.join(" && ")
+        }
+    }
+
+    fn model_sec_dominates(lhs: ModelSec, rhs: ModelSec) -> bool {
+        let rank = |value| match value {
+            ModelSec::Bottom => 0,
+            ModelSec::Low => 1,
+            ModelSec::High => 2,
+            ModelSec::Maximum => 3,
+        };
+        rank(lhs) >= rank(rhs)
+    }
+
+    fn model_dpt_dominates(lhs: ModelDpt, rhs: ModelDpt) -> bool {
+        rhs == ModelDpt::Bottom || lhs == rhs || lhs == ModelDpt::Maximum
+    }
+
+    fn model_clause_dominates(lhs: ModelClause, rhs: ModelClause) -> bool {
+        model_sec_dominates(lhs.sec, rhs.sec) && model_dpt_dominates(lhs.dpt, rhs.dpt)
+    }
+
+    fn model_right(structure: &AccessStructure, clause: ModelClause) -> Result<Right, Error> {
+        let mut ids = Vec::new();
+        let sec = match clause.sec {
+            ModelSec::Bottom => None,
+            ModelSec::Low => Some("LOW"),
+            ModelSec::High => Some("HIG"),
+            ModelSec::Maximum => Some(MAX_ATTRIBUTE_NAME),
+        };
+        let dpt = match clause.dpt {
+            ModelDpt::Bottom => None,
+            ModelDpt::Dev => Some("DEV"),
+            ModelDpt::Mkg => Some("MKG"),
+            ModelDpt::Maximum => Some(MAX_ATTRIBUTE_NAME),
+        };
+        if let Some(name) = sec {
+            ids.push(structure.get_attribute_id(&QualifiedAttribute::new("SEC", name))?);
+        }
+        if let Some(name) = dpt {
+            ids.push(structure.get_attribute_id(&QualifiedAttribute::new("DPT", name))?);
+        }
+        Right::from_point(ids)
+    }
+
+    fn model_ciphertext_rights(
+        structure: &AccessStructure,
+        clauses: &[ModelClause],
+    ) -> Result<HashSet<Right>, Error> {
+        let unique = clauses.iter().copied().collect::<HashSet<_>>();
+        unique
+            .iter()
+            .filter(|&&clause| {
+                !unique
+                    .iter()
+                    .any(|other| clause != *other && model_clause_dominates(clause, *other))
+            })
+            .map(|&clause| model_right(structure, clause))
+            .collect()
+    }
+
+    fn model_key_rights(
+        structure: &AccessStructure,
+        clauses: &[ModelClause],
+    ) -> Result<HashSet<Right>, Error> {
+        let lower_sec = |value| match value {
+            ModelSec::Bottom => vec![ModelSec::Bottom],
+            ModelSec::Low => vec![ModelSec::Bottom, ModelSec::Low],
+            ModelSec::High => vec![ModelSec::Bottom, ModelSec::Low, ModelSec::High],
+            ModelSec::Maximum => vec![
+                ModelSec::Bottom,
+                ModelSec::Low,
+                ModelSec::High,
+                ModelSec::Maximum,
+            ],
+        };
+        let lower_dpt = |value| match value {
+            ModelDpt::Bottom => vec![ModelDpt::Bottom],
+            ModelDpt::Dev => vec![ModelDpt::Bottom, ModelDpt::Dev],
+            ModelDpt::Mkg => vec![ModelDpt::Bottom, ModelDpt::Mkg],
+            ModelDpt::Maximum => vec![
+                ModelDpt::Bottom,
+                ModelDpt::Dev,
+                ModelDpt::Mkg,
+                ModelDpt::Maximum,
+            ],
+        };
+
+        let mut rights = HashSet::new();
+        for clause in clauses {
+            for sec in lower_sec(clause.sec) {
+                for dpt in lower_dpt(clause.dpt) {
+                    rights.insert(model_right(structure, ModelClause { sec, dpt })?);
+                }
+            }
+        }
+        Ok(rights)
+    }
+
+    #[test]
+    fn test_exhaustive_small_model_semantics_144_policies() -> Result<(), Error> {
+        let mut structure = AccessStructure::new();
+        structure.add_hierarchy("SEC".to_string())?;
+        structure.add_attribute(
+            QualifiedAttribute::new("SEC", "LOW"),
+            EncryptionHint::Classic,
+            None,
+        )?;
+        structure.add_attribute(
+            QualifiedAttribute::new("SEC", "HIG"),
+            EncryptionHint::Classic,
+            Some("LOW"),
+        )?;
+        structure.add_anarchy("DPT".to_string())?;
+        structure.add_attribute(
+            QualifiedAttribute::new("DPT", "DEV"),
+            EncryptionHint::Classic,
+            None,
+        )?;
+        structure.add_attribute(
+            QualifiedAttribute::new("DPT", "MKG"),
+            EncryptionHint::Classic,
+            None,
+        )?;
+
+        let mut atomic = Vec::new();
+        for sec in [
+            ModelSec::Bottom,
+            ModelSec::Low,
+            ModelSec::High,
+            ModelSec::Maximum,
+        ] {
+            for dpt in [
+                ModelDpt::Bottom,
+                ModelDpt::Dev,
+                ModelDpt::Mkg,
+                ModelDpt::Maximum,
+            ] {
+                if sec != ModelSec::Bottom || dpt != ModelDpt::Bottom {
+                    atomic.push(ModelClause { sec, dpt });
+                }
+            }
+        }
+        assert_eq!(atomic.len(), 15);
+
+        let mut cases = vec![(
+            "*".to_string(),
+            vec![ModelClause {
+                sec: ModelSec::Bottom,
+                dpt: ModelDpt::Bottom,
+            }],
+        )];
+        for clause in &atomic {
+            cases.push((model_clause_source(*clause), vec![*clause]));
+        }
+        for (index, lhs) in atomic.iter().enumerate() {
+            for rhs in &atomic[index..] {
+                cases.push((
+                    format!(
+                        "({}) || ({})",
+                        model_clause_source(*lhs),
+                        model_clause_source(*rhs)
+                    ),
+                    vec![*lhs, *rhs],
+                ));
+            }
+        }
+        cases.extend([
+            (
+                "(SEC::LOW || SEC::HIG) && (DPT::DEV || DPT::MKG)".to_string(),
+                vec![
+                    ModelClause {
+                        sec: ModelSec::Low,
+                        dpt: ModelDpt::Dev,
+                    },
+                    ModelClause {
+                        sec: ModelSec::Low,
+                        dpt: ModelDpt::Mkg,
+                    },
+                    ModelClause {
+                        sec: ModelSec::High,
+                        dpt: ModelDpt::Dev,
+                    },
+                    ModelClause {
+                        sec: ModelSec::High,
+                        dpt: ModelDpt::Mkg,
+                    },
+                ],
+            ),
+            (
+                "SEC::LOW && SEC::HIG".to_string(),
+                vec![ModelClause {
+                    sec: ModelSec::High,
+                    dpt: ModelDpt::Bottom,
+                }],
+            ),
+            (
+                "DPT::DEV || (DPT::DEV && SEC::HIG)".to_string(),
+                vec![
+                    ModelClause {
+                        sec: ModelSec::Bottom,
+                        dpt: ModelDpt::Dev,
+                    },
+                    ModelClause {
+                        sec: ModelSec::High,
+                        dpt: ModelDpt::Dev,
+                    },
+                ],
+            ),
+            (
+                "(SEC::LOW || SEC::HIG) && DPT::$".to_string(),
+                vec![
+                    ModelClause {
+                        sec: ModelSec::Low,
+                        dpt: ModelDpt::Maximum,
+                    },
+                    ModelClause {
+                        sec: ModelSec::High,
+                        dpt: ModelDpt::Maximum,
+                    },
+                ],
+            ),
+            (
+                "SEC::LOW || *".to_string(),
+                vec![ModelClause {
+                    sec: ModelSec::Bottom,
+                    dpt: ModelDpt::Bottom,
+                }],
+            ),
+            (
+                "* || SEC::LOW".to_string(),
+                vec![ModelClause {
+                    sec: ModelSec::Bottom,
+                    dpt: ModelDpt::Bottom,
+                }],
+            ),
+            (
+                "SEC::LOW && *".to_string(),
+                vec![ModelClause {
+                    sec: ModelSec::Low,
+                    dpt: ModelDpt::Bottom,
+                }],
+            ),
+            (
+                "* && SEC::LOW".to_string(),
+                vec![ModelClause {
+                    sec: ModelSec::Low,
+                    dpt: ModelDpt::Bottom,
+                }],
+            ),
+        ]);
+        assert_eq!(cases.len(), 144);
+
+        let mut compiled = Vec::new();
+        for (source, clauses) in &cases {
+            let policy = AccessPolicy::parse(source)?;
+            let expected_x = model_ciphertext_rights(&structure, clauses)?;
+            let expected_y = model_key_rights(&structure, clauses)?;
+            let actual_x = structure.ap_to_enc_rights(&policy)?;
+            let actual_y = structure.ap_to_usk_rights(&policy)?;
+            assert_eq!(actual_x, expected_x, "ciphertext policy: {source}");
+            assert_eq!(actual_y, expected_y, "key policy: {source}");
+            compiled.push((actual_x, actual_y, expected_x, expected_y));
+        }
+
+        let mut decisions = 0usize;
+        for (actual_x, _, expected_x, _) in &compiled {
+            for (_, actual_y, _, expected_y) in &compiled {
+                let compiler_authorizes = !actual_x.is_disjoint(actual_y);
+                let model_authorizes = !expected_x.is_disjoint(expected_y);
+                assert_eq!(compiler_authorizes, model_authorizes);
+                decisions += 1;
+            }
+        }
+        assert_eq!(decisions, 20_736);
+
+        for source in ["DPT::DEV && DPT::MKG", "DPT::UNKNOWN", "UNKNOWN::VALUE"] {
+            match AccessPolicy::parse(source) {
+                Ok(policy) => {
+                    assert!(structure.ap_to_enc_rights(&policy).is_err(), "{source}");
+                    assert!(structure.ap_to_usk_rights(&policy).is_err(), "{source}");
+                }
+                Err(_) => {}
+            }
+        }
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_missing_dimension_scaling_matches_cartesian_product() -> Result<(), Error> {
+        for dimension_count in 2u32..=5 {
+            let mut structure = AccessStructure::new();
+            for dimension_index in 0..dimension_count {
+                let dimension = format!("D{dimension_index}");
+                structure.add_anarchy(dimension.clone())?;
+                for attribute_index in 0..3 {
+                    let attribute = format!("V{attribute_index}");
+                    structure.add_attribute(
+                        QualifiedAttribute::new(&dimension, &attribute),
+                        EncryptionHint::Classic,
+                        None,
+                    )?;
+                }
+            }
+
+            let lp = structure.ap_to_usk_rights(&AccessPolicy::parse("D0::V0")?)?;
+            let unrestricted_source = std::iter::once("D0::V0".to_string())
+                .chain((1..dimension_count).map(|index| format!("D{index}::$")))
+                .collect::<Vec<_>>()
+                .join(" && ");
+            let unrestricted =
+                structure.ap_to_usk_rights(&AccessPolicy::parse(&unrestricted_source)?)?;
+
+            assert_eq!(lp.len(), 2);
+            assert_eq!(unrestricted.len(), 2 * 5usize.pow(dimension_count - 1));
+        }
+        Ok(())
+    }
 }

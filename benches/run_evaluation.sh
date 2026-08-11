@@ -3,7 +3,7 @@ set -euo pipefail
 
 repo_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 baseline_ref=089a548
-iterations=${ITERATIONS:-20}
+iterations=${ITERATIONS:-2000}
 warmup=${WARMUP:-20}
 jobs=${JOBS:-1}
 pin_workers=${PIN_WORKERS:-0}

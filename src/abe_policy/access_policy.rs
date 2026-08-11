@@ -104,6 +104,9 @@ impl AccessPolicy {
                 }
             } else if e == "*" {
                 return Ok(Self::conjugate(Self::Broadcast, q.into_iter()));
+            } else if e.starts_with('*') {
+                q.push_back(Self::Broadcast);
+                e = &e[1..];
             } else {
                 match &e[..1] {
                     "(" => {
@@ -232,6 +235,22 @@ mod tests {
         let ap = AccessPolicy::parse("D1::A (D2::A || D2::B)").unwrap();
         println!("{ap:#?}");
         assert_eq!(AccessPolicy::parse("*").unwrap(), AccessPolicy::Broadcast);
+        assert_eq!(
+            AccessPolicy::parse("D1::A || *").unwrap(),
+            AccessPolicy::Broadcast
+        );
+        assert_eq!(
+            AccessPolicy::parse("* || D1::A").unwrap(),
+            AccessPolicy::Broadcast
+        );
+        assert_eq!(
+            AccessPolicy::parse("D1::A && *").unwrap(),
+            AccessPolicy::parse("D1::A").unwrap()
+        );
+        assert_eq!(
+            AccessPolicy::parse("* && D1::A").unwrap(),
+            AccessPolicy::parse("D1::A").unwrap()
+        );
         assert!(AccessPolicy::parse("").is_err());
 
         // These are invalid access policies.

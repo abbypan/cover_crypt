@@ -24,7 +24,7 @@ use std::{
 
 const BASELINE_REF: &str = "089a548";
 const MAXIMUM: &str = "$";
-const DEFAULT_ITERATIONS: u32 = 20;
+const DEFAULT_ITERATIONS: u32 = 2000;
 const DEFAULT_WARMUP: u32 = 20;
 const PLAINTEXT: &[u8] = b"LP-Covercrypt evaluation benchmark";
 
