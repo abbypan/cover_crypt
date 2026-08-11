@@ -61,6 +61,17 @@ being compared--unchanged. Translation, parsing, rights compilation, key
 generation, and warm-up all occur before `Instant::now()`; only repeated
 decryption is timed.
 
+For each policy pair and binary, one timer encloses exactly 20 calls to the same
+public `PkeAc::decrypt` method over an already-built key and ciphertext. The raw
+row stores the loop total and its per-pair mean (`total_ns / 20`). Each Table 5
+stratum is the unweighted arithmetic mean of those per-pair means, so every
+policy pair has equal weight. Because every pair uses the same count, this is
+also the arithmetic mean over all timed calls in the stratum, although
+individual-call samples are not retained. Successful and failed calls have the
+same external setup boundaries. Their internal paths differ: a success derives
+the authenticated-encryption key and decrypts the AES-256-GCM payload after
+decapsulation, whereas a failure returns `None` after decapsulation.
+
 Generated files:
 
 - `<scenario>-covercrypt.csv` and `<scenario>-lp-covercrypt.csv`: raw per-pair

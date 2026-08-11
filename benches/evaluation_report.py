@@ -77,6 +77,7 @@ def ciphertext_rights(
 
 
 def average_us(rows: list[dict[str, str]], variant: str) -> float:
+    """Unweighted mean of the fixed-count timed-loop mean for each policy pair."""
     return fmean(float(row[f"{variant}_mean_ns"]) for row in rows) / 1_000.0
 
 
@@ -128,6 +129,13 @@ def main() -> None:
         raise ValueError("Covercrypt rows do not match the requested scenario")
     if {row["scenario"] for row in lp.values()} != {args.scenario}:
         raise ValueError("LP-Covercrypt rows do not match the requested scenario")
+
+    cover_iterations = {int(row["iterations"]) for row in cover.values()}
+    lp_iterations = {int(row["iterations"]) for row in lp.values()}
+    if len(cover_iterations) != 1 or cover_iterations != lp_iterations:
+        raise ValueError(
+            "all policy pairs and both variants must use one identical iteration count"
+        )
 
     cover_x = ciphertext_rights(cover, "Covercrypt")
     lp_x = ciphertext_rights(lp, "LP-Covercrypt")
@@ -251,7 +259,7 @@ def main() -> None:
             "reduction_percent": round((cover_us - lp_us) / cover_us * 100, 2),
         }
 
-    iterations = int(next(iter(lp.values()))["iterations"])
+    iterations = lp_iterations.pop()
     summary = {
         "scenario": args.scenario,
         "baseline_ref": next(iter(cover.values()))["baseline_ref"],
