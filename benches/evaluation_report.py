@@ -61,6 +61,21 @@ def read_csv(path: Path) -> dict[tuple[str, str], dict[str, str]]:
     return keyed
 
 
+def ciphertext_rights(
+    rows: dict[tuple[str, str], dict[str, str]], variant: str
+) -> dict[str, str]:
+    """Return one stable canonical ciphertext-right encoding per source policy."""
+    compiled: dict[str, str] = {}
+    for (enc_policy, _), row in rows.items():
+        encoded = row["ciphertext_rights_hex"]
+        previous = compiled.setdefault(enc_policy, encoded)
+        if previous != encoded:
+            raise ValueError(
+                f"{variant} compiled {enc_policy!r} inconsistently across key pairs"
+            )
+    return compiled
+
+
 def average_us(rows: list[dict[str, str]], variant: str) -> float:
     return fmean(float(row[f"{variant}_mean_ns"]) for row in rows) / 1_000.0
 
@@ -114,6 +129,16 @@ def main() -> None:
     if {row["scenario"] for row in lp.values()} != {args.scenario}:
         raise ValueError("LP-Covercrypt rows do not match the requested scenario")
 
+    cover_x = ciphertext_rights(cover, "Covercrypt")
+    lp_x = ciphertext_rights(lp, "LP-Covercrypt")
+    if len(cover_x) != 79 or len(lp_x) != 79:
+        raise ValueError("expected 79 distinct ciphertext policies in each implementation")
+    if cover_x != lp_x:
+        mismatches = sorted(
+            policy for policy in cover_x.keys() | lp_x.keys() if cover_x.get(policy) != lp_x.get(policy)
+        )
+        raise ValueError(f"ciphertext compiler right sets differ for: {mismatches}")
+
     merged: list[dict[str, str]] = []
     for pair in sorted(cover):
         c_row, lp_row = cover[pair], lp[pair]
@@ -122,6 +147,15 @@ def main() -> None:
             raise ValueError(f"Y classification differs for {pair}")
         c_outcome = c_row["decryption_result"]
         lp_outcome = lp_row["decryption_result"]
+        expected_baseline_policy = (
+            pair[1]
+            .replace("DPT::$", "(DPT::DEV || DPT::MKG || DPT::$)")
+            .replace("CTR::$", "(CTR::EN || CTR::FR || CTR::$)")
+        )
+        if c_row["implementation_user_ap"] != expected_baseline_policy:
+            raise ValueError(f"unexpected baseline policy translation for {pair}")
+        if lp_row["implementation_user_ap"] != pair[1]:
+            raise ValueError(f"LP implementation policy differs from source for {pair}")
         oracle_outcome = "success" if specification_allows(*pair) else "failure"
         if lp_outcome != oracle_outcome:
             raise ValueError(
@@ -148,6 +182,9 @@ def main() -> None:
             {
                 "enc_ap": pair[0],
                 "user_ap": pair[1],
+                "covercrypt_implementation_user_ap": c_row["implementation_user_ap"],
+                "lp_implementation_user_ap": lp_row["implementation_user_ap"],
+                "ciphertext_rights_hex": cover_x[pair[0]],
                 "y_relation": relation,
                 "group": group,
                 "oracle_outcome": oracle_outcome,
@@ -227,6 +264,10 @@ def main() -> None:
             "oracle_negative_pairs": len(oracle_negative),
             "same_y_pairs": len(same),
             "different_y_pairs": len(different),
+        },
+        "ciphertext_compiler_check": {
+            "policies_checked": len(cover_x),
+            "canonical_right_sets_equal": True,
         },
         "same_y": same_outcomes,
         "different_y": group_results,

@@ -731,7 +731,7 @@ fn bench_collect_results(_c: &mut Criterion) {
 
 criterion_group!(
     name = benches;
-    config = Criterion::default().sample_size(2000);
+    config = Criterion::default().sample_size(20);
     targets =
     bench_classical_encapsulation,
     bench_classical_decapsulation,

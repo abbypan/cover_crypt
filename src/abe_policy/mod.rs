@@ -17,5 +17,6 @@ pub use tests::gen_structure;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Version {
-    V1,
+    /// Access structures with a protected maximum in every dimension.
+    V2 = 1,
 }

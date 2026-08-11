@@ -20,7 +20,7 @@ pub struct AccessStructure {
 impl AccessStructure {
     pub fn new() -> Self {
         Self {
-            version: Version::V1,
+            version: Version::V2,
             dimensions: HashMap::new(),
         }
     }
@@ -45,6 +45,24 @@ impl AccessStructure {
                     Error::OperationNotPermitted("attribute identifier space exhausted".to_string())
                 })
             })
+    }
+
+    fn validate_serialized_invariants(&self) -> Result<(), Error> {
+        let mut attribute_ids = HashSet::new();
+        for (name, dimension) in &self.dimensions {
+            dimension.validate_maximum().map_err(|error| {
+                Error::ConversionFailed(format!("invalid dimension '{name}': {error}"))
+            })?;
+            for attribute in dimension.attributes() {
+                if !attribute_ids.insert(attribute.get_id()) {
+                    return Err(Error::ConversionFailed(format!(
+                        "duplicate attribute identifier {}",
+                        attribute.get_id()
+                    )));
+                }
+            }
+        }
+        Ok(())
     }
 
     /// Add an anarchic dimension with the given name to the access structure.
@@ -422,7 +440,7 @@ fn combine(
 impl Default for AccessStructure {
     fn default() -> Self {
         Self {
-            version: Version::V1,
+            version: Version::V2,
             dimensions: HashMap::new(),
         }
     }
@@ -463,7 +481,7 @@ mod serialization {
 
         fn read(de: &mut Deserializer) -> Result<Self, Self::Error> {
             let version = de.read_leb128_u64()?;
-            let dimensions = if version == Version::V1 as u64 {
+            let dimensions = if version == Version::V2 as u64 {
                 (0..de.read_leb128_u64()?)
                     .map(|_| {
                         let name = String::from_utf8(de.read_vec()?)
@@ -473,14 +491,16 @@ mod serialization {
                     })
                     .collect::<Result<HashMap<_, _>, Error>>()
             } else {
-                Err(Error::ConversionFailed(
-                    "unable to deserialize versions prior to V3".to_string(),
-                ))
+                Err(Error::ConversionFailed(format!(
+                    "unsupported access-structure version {version}; legacy V1 structures require explicit LP migration"
+                )))
             }?;
-            Ok(Self {
-                version: Version::V1,
+            let structure = Self {
+                version: Version::V2,
                 dimensions,
-            })
+            };
+            structure.validate_serialized_invariants()?;
+            Ok(structure)
         }
     }
 
@@ -492,6 +512,19 @@ mod serialization {
         let mut structure = AccessStructure::new();
         gen_structure(&mut structure, false).unwrap();
         test_serialization(&structure).unwrap();
+    }
+
+    #[test]
+    fn test_legacy_access_structure_version_is_rejected() {
+        use crate::abe_policy::gen_structure;
+        use cosmian_crypto_core::bytes_ser_de::Serializable;
+
+        let mut structure = AccessStructure::new();
+        gen_structure(&mut structure, false).unwrap();
+        let mut bytes = structure.serialize().unwrap();
+        assert_eq!(bytes[0], Version::V2 as u8);
+        bytes[0] = 0;
+        assert!(AccessStructure::deserialize(&bytes).is_err());
     }
 }
 

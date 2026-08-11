@@ -283,6 +283,31 @@ mod tests {
     }
 
     #[test]
+    fn test_maximum_key_requires_regeneration_after_structure_extension() -> Result<(), Error> {
+        let cc = Covercrypt::default();
+        let (mut msk, _) = cc_keygen(&cc, false)?;
+        let maximum_policy = AccessPolicy::parse("SEC::TOP && DPT::$")?;
+        let mut issued_key = cc.generate_user_secret_key(&mut msk, &maximum_policy)?;
+
+        msk.access_structure.add_attribute(
+            QualifiedAttribute::new("DPT", "Sales"),
+            EncryptionHint::Classic,
+            None,
+        )?;
+        let mpk = cc.update_msk(&mut msk)?;
+        let new_policy = AccessPolicy::parse("SEC::TOP && DPT::Sales")?;
+        let (secret, encapsulation) = cc.encaps(&mpk, &new_policy)?;
+
+        assert!(cc.decaps(&issued_key, &encapsulation)?.is_none());
+        cc.refresh_usk(&mut msk, &mut issued_key, false)?;
+        assert!(cc.decaps(&issued_key, &encapsulation)?.is_none());
+
+        let regenerated_key = cc.generate_user_secret_key(&mut msk, &maximum_policy)?;
+        assert_eq!(Some(secret), cc.decaps(&regenerated_key, &encapsulation)?);
+        Ok(())
+    }
+
+    #[test]
     fn test_broadcast() {
         let cc = Covercrypt::default();
         let ap = AccessPolicy::parse("*").unwrap();

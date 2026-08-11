@@ -103,6 +103,29 @@ impl Dimension {
         }
     }
 
+    pub(crate) fn validate_maximum(&self) -> Result<(), Error> {
+        let maximum = self
+            .get_attribute(&MAX_ATTRIBUTE_NAME.to_string())
+            .ok_or_else(|| {
+                Error::ConversionFailed(format!(
+                    "missing structural maximum '{MAX_ATTRIBUTE_NAME}'"
+                ))
+            })?;
+        if maximum.get_status() != AttributeStatus::EncryptDecrypt {
+            return Err(Error::ConversionFailed(format!(
+                "structural maximum '{MAX_ATTRIBUTE_NAME}' is disabled"
+            )));
+        }
+        if let Self::Hierarchy(attributes) = self {
+            if attributes.keys().last().map(String::as_str) != Some(MAX_ATTRIBUTE_NAME) {
+                return Err(Error::ConversionFailed(format!(
+                    "structural maximum '{MAX_ATTRIBUTE_NAME}' is not greatest"
+                )));
+            }
+        }
+        Ok(())
+    }
+
     pub(crate) fn next_attribute_id(&self) -> Option<usize> {
         if self.nb_attributes() == 0 {
             None

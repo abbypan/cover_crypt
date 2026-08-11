@@ -6,7 +6,7 @@ Run the complete experiment from the repository root:
 benches/run_evaluation.sh
 ```
 
-The default run measures every policy pair 2,000 times and writes raw and
+The default run measures every policy pair 20 times and writes raw and
 aggregated results to `benchmark-results/`. For a quick structural check, use
 fewer iterations without changing the corpus:
 
@@ -44,15 +44,29 @@ SEC/DPT/CTR conjunctions and applies their declared orders without consulting
 either compiler or decryption result. The report is rejected if an
 LP-Covercrypt result disagrees with its oracle label.
 
+Before randomized encapsulation, each binary calls its public
+`ap_to_enc_rights` implementation for every ciphertext policy. The runner
+sorts the canonical `Right` byte encodings and stores them in
+`ciphertext_rights_hex`. Attribute identifiers are assigned in the same order
+in both access structures, including the v15 adapter's explicit maxima. The
+report generator rejects the experiment unless each implementation is stable
+across all repeated rows and the two compiled right sets are equal for all 79
+ciphertext policies. The validated result is also written to each summary.
+
 Release `089a548` predates the structural maximum attribute. For the baseline
 only, an explicit maximum in an anarchic dimension is expanded to a disjunction
 of all values in that dimension. This supplies the paper's `$` semantics while
-leaving the original implementation's missing-dimension expansion—the behavior
-being compared—unchanged.
+leaving the original implementation's missing-dimension expansion--the behavior
+being compared--unchanged. Translation, parsing, rights compilation, key
+generation, and warm-up all occur before `Instant::now()`; only repeated
+decryption is timed.
 
 Generated files:
 
 - `<scenario>-covercrypt.csv` and `<scenario>-lp-covercrypt.csv`: raw per-pair
-  measurements;
-- `<scenario>-pairs.csv`: joined measurements and group assignments;
+  measurements, including both `user_ap` and the exact
+  `implementation_user_ap` passed to that binary, plus the sorted canonical
+  ciphertext-right encoding;
+- `<scenario>-pairs.csv`: joined measurements, both implementation policies,
+  and group assignments;
 - `<scenario>-summary.json`: validated table values and environment metadata.

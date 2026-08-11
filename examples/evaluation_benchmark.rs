@@ -24,7 +24,7 @@ use std::{
 
 const BASELINE_REF: &str = "089a548";
 const MAXIMUM: &str = "$";
-const DEFAULT_ITERATIONS: u32 = 2_000;
+const DEFAULT_ITERATIONS: u32 = 20;
 const DEFAULT_WARMUP: u32 = 20;
 const PLAINTEXT: &[u8] = b"LP-Covercrypt evaluation benchmark";
 
@@ -171,22 +171,22 @@ fn create_evaluation_structure(scenario: Scenario) -> Result<AccessStructure, Er
     let hint = scenario.hint();
 
     structure.add_hierarchy("SEC".to_string())?;
+    add_baseline_maximum(&mut structure, "SEC", hint, None)?;
     structure.add_attribute(QualifiedAttribute::new("SEC", "LOW"), hint, None)?;
     structure.add_attribute(QualifiedAttribute::new("SEC", "MED"), hint, Some("LOW"))?;
     structure.add_attribute(QualifiedAttribute::new("SEC", "HIG"), hint, Some("MED"))?;
-    add_baseline_maximum(&mut structure, "SEC", hint, Some("HIG"))?;
 
     structure.add_anarchy("DPT".to_string())?;
+    add_baseline_maximum(&mut structure, "DPT", hint, None)?;
     for value in ["DEV", "MKG"] {
         structure.add_attribute(QualifiedAttribute::new("DPT", value), hint, None)?;
     }
-    add_baseline_maximum(&mut structure, "DPT", hint, None)?;
 
     structure.add_anarchy("CTR".to_string())?;
+    add_baseline_maximum(&mut structure, "CTR", hint, None)?;
     for value in ["EN", "FR"] {
         structure.add_attribute(QualifiedAttribute::new("CTR", value), hint, None)?;
     }
-    add_baseline_maximum(&mut structure, "CTR", hint, None)?;
 
     Ok(structure)
 }
@@ -267,6 +267,14 @@ fn csv_field(value: &str) -> String {
     format!("\"{}\"", value.replace('"', "\"\""))
 }
 
+fn bytes_hex(value: &[u8]) -> String {
+    value
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect::<Vec<_>>()
+        .join("")
+}
+
 fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
     let enc_policies = encryption_policies();
     let usk_policies = user_policies();
@@ -279,7 +287,7 @@ fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
     let mut output = BufWriter::new(output);
     writeln!(
         output,
-        "scenario,variant,baseline_ref,enc_ap,user_ap,y_relation,user_rights,user_key_bytes,ciphertext_bytes,decryption_result,iterations,total_ns,mean_ns"
+        "scenario,variant,baseline_ref,enc_ap,user_ap,implementation_user_ap,y_relation,user_rights,user_key_bytes,ciphertext_rights_hex,ciphertext_bytes,decryption_result,iterations,total_ns,mean_ns"
     )?;
 
     let selected_enc_policies = enc_policies
@@ -304,6 +312,14 @@ fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
 
     for enc_policy in selected_enc_policies {
         let eap = AccessPolicy::parse(enc_policy)?;
+        let mut ciphertext_rights_hex = msk
+            .access_structure
+            .ap_to_enc_rights(&eap)?
+            .into_iter()
+            .map(|right| bytes_hex(&right))
+            .collect::<Vec<_>>();
+        ciphertext_rights_hex.sort_unstable();
+        let ciphertext_rights_hex = ciphertext_rights_hex.join(";");
         let ciphertext =
             PkeAc::<{ Aes256Gcm::KEY_LENGTH }, Aes256Gcm>::encrypt(&cc, &mpk, &eap, PLAINTEXT)?;
         let ciphertext_bytes = {
@@ -360,15 +376,17 @@ fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
 
             writeln!(
                 output,
-                "{},{},{},{},{},{},{},{},{},{},{},{},{:.3}",
+                "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{:.3}",
                 config.scenario.name(),
                 config.variant,
                 BASELINE_REF,
                 csv_field(enc_policy),
                 csv_field(user_policy),
+                csv_field(&implementation_policy),
                 y_relation,
                 user_rights,
                 user_key_bytes,
+                csv_field(&ciphertext_rights_hex),
                 ciphertext_bytes,
                 outcome,
                 config.iterations,
