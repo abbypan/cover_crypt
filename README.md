@@ -110,9 +110,11 @@ RESULTS_DIR="$PWD/benchmark-results" \
 benches/run_evaluation.sh
 ```
 
-The archived paper data are in `benchmark-results/`. Its checked-in
-raw CSVs use an earlier schema, but the current report program deliberately
-supports it and marks fields that were not recorded instead of inventing them.
+The canonical paper data are in `benchmark-results/`. The checked-in raw CSVs
+use the current schema: they retain both the source and exact implementation
+policies and the sorted canonical ciphertext-right encoding. The report also
+supports older schemas and labels fields that were not recorded rather than
+inventing them.
 
 For uncontended single-core latency, use `JOBS=1` and leave
 `PIN_WORKERS=0`. Those results will not reproduce the paper's 12-worker

@@ -12,13 +12,13 @@
     "different_y_pairs": 3397
   },
   "raw_schema_evidence": {
-    "implementation_policy_recorded": false
+    "implementation_policy_recorded": true
   },
   "ciphertext_compiler_observation": {
-    "recorded": false,
-    "scope": "canonical ciphertext rights absent from historical raw CSV schema",
-    "policies_checked": 0,
-    "canonical_right_sets_equal_on_corpus": null
+    "recorded": true,
+    "scope": "79 normalized single-conjunction policies",
+    "policies_checked": 79,
+    "canonical_right_sets_equal_on_corpus": true
   },
   "compiled_policy_and_sizes": {
     "unique_user_policies": 79,
@@ -72,35 +72,35 @@
   "same_y": {
     "success": {
       "pairs": 860,
-      "lp_us": 1506.55,
-      "covercrypt_us": 1550.11,
-      "reduction_percent": 2.81
+      "lp_us": 1502.62,
+      "covercrypt_us": 2231.58,
+      "reduction_percent": 32.67
     },
     "failure": {
       "pairs": 1984,
-      "lp_us": 1548.16,
-      "covercrypt_us": 1594.68,
-      "reduction_percent": 2.92
+      "lp_us": 1551.22,
+      "covercrypt_us": 2291.88,
+      "reduction_percent": 32.32
     }
   },
   "different_y": {
     "TP_TP": {
       "pairs": 275,
-      "lp_us": 555.82,
-      "covercrypt_us": 2116.08,
-      "reduction_percent": 73.73
+      "lp_us": 562.99,
+      "covercrypt_us": 3003.24,
+      "reduction_percent": 81.25
     },
     "TN_TN": {
       "pairs": 1680,
-      "lp_us": 465.44,
-      "covercrypt_us": 2419.16,
-      "reduction_percent": 80.76
+      "lp_us": 465.31,
+      "covercrypt_us": 3486.13,
+      "reduction_percent": 86.65
     },
     "TN_FP": {
       "pairs": 1442,
-      "lp_us": 625.22,
-      "covercrypt_us": 2192.82,
-      "reduction_percent": 71.49
+      "lp_us": 627.82,
+      "covercrypt_us": 3168.45,
+      "reduction_percent": 80.19
     }
   },
   "v15_native_sensitivity": {
@@ -128,8 +128,8 @@
   "environment": {
     "workers": 12,
     "workers_cpu_pinned": true,
-    "lp_git_head": "ae008456479fd1f9eb01a7e265571e2a7bb3afc9",
-    "lp_worktree_dirty": true,
+    "lp_git_head": "39db9cb6250aeccb43c0d38c0a19d06e194adef6",
+    "lp_worktree_dirty": false,
     "os": "Linux-7.1.4-arch1-1-x86_64-with-glibc2.43",
     "cpu": "AMD Ryzen 9 5900 12-Core Processor",
     "memory_gib": 62.7,

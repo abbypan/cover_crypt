@@ -21,7 +21,7 @@ benches/run_evaluation.sh
 
 The default run measures every policy pair 2,000 times and writes raw and
 aggregated results to the flat `benchmark-results/` directory, which also
-contains the archived paper artifact. For a quick structural check, use fewer
+contains the canonical paper artifact. For a quick structural check, use fewer
 iterations without changing the corpus:
 
 ```sh
@@ -65,8 +65,9 @@ the canonical `Right` byte encodings and stores each implementation's value in
 and records whether the sets happen to be equal on these 79 normalized
 single-conjunction policies. This observation is not a claim of compiler
 equality for general Boolean policies: LP may normalize and subsume redundant
-v15 clauses. Historical raw CSVs without this field remain reportable and are
-explicitly marked as lacking canonical-right evidence.
+v15 clauses. The canonical paper rows use this current schema. Historical raw
+CSVs without the field remain reportable and are explicitly marked as lacking
+canonical-right evidence.
 
 Release `089a548` predates the structural maximum attribute. For the baseline
 only, an explicit maximum in an anarchic dimension is expanded to a disjunction
@@ -87,7 +88,7 @@ same external setup boundaries. Their internal paths differ: a success derives
 the authenticated-encryption key and decrypts the AES-256-GCM payload after
 decapsulation, whereas a failure returns `None` after decapsulation.
 
-The archived paper timing is one fixed-order batch: all baseline measurements
+The canonical paper timing is one fixed-order batch: all baseline measurements
 precede all LP measurements, and no independent batch samples or confidence
 intervals are available. Treat its percentages as descriptive. Performance
 claims require repeated batches, reversed or randomized implementation order,
@@ -99,7 +100,7 @@ Generated files:
   measurements, including both `user_ap` and the exact
   `implementation_user_ap` passed to that binary, plus the sorted canonical
   ciphertext-right encoding;
-- `<scenario>-pairs.csv`: joined measurements, both implementation policies
-  when recorded by the raw schema, and group assignments;
+- `<scenario>-pairs.csv`: joined measurements, both implementation policies,
+  both canonical ciphertext-right encodings, and group assignments;
 - `<scenario>-summary.json`: validated table values, the adapter-free subset
   excluding `$` from both source policies, and environment metadata.
