@@ -1,0 +1,199 @@
+{
+  "design": {
+    "replicated_batches": 10,
+    "workers": 1,
+    "warmup_decryptions_per_pair_per_batch": 20,
+    "timed_iterations_per_pair_per_batch": 300,
+    "sampled_pairs_per_stratum": 20,
+    "strata": [
+      "same_success",
+      "same_failure",
+      "diff_tp_tp",
+      "diff_tn_tn",
+      "diff_tn_fp"
+    ],
+    "variant_order": "alternating and balanced within each scenario",
+    "scenario_order": "alternating across batches",
+    "confidence_interval": "two-sided 95% Student-t interval over paired batch reductions",
+    "selection_sha256": "b22487abdea4da105204597b8f5984aefda63ff82e4cb8a4c33f3ff07e5fb161",
+    "selection_seed": 20260813,
+    "source_manifest": "timing-source-manifest.json",
+    "source_manifest_sha256": "a89d820cd53382d0a38d272c22db3dff71a6522031240fa34db430aaca80a4e1",
+    "cpu_pinned": true,
+    "pinned_cpu": 0
+  },
+  "results": {
+    "classic": {
+      "same_success": {
+        "sampled_pairs": 20,
+        "covercrypt_us_mean_of_batches": 809.3,
+        "lp_us_mean_of_batches": 765.16,
+        "paired_reduction_percent": {
+          "mean": 0.29,
+          "ci95_low": -12.03,
+          "ci95_high": 12.6
+        },
+        "reduction_by_first_variant": {
+          "covercrypt": -0.91,
+          "lp-covercrypt": 1.49
+        }
+      },
+      "same_failure": {
+        "sampled_pairs": 20,
+        "covercrypt_us_mean_of_batches": 872.82,
+        "lp_us_mean_of_batches": 853.93,
+        "paired_reduction_percent": {
+          "mean": -0.43,
+          "ci95_low": -7.93,
+          "ci95_high": 7.07
+        },
+        "reduction_by_first_variant": {
+          "covercrypt": 0.75,
+          "lp-covercrypt": -1.62
+        }
+      },
+      "diff_tp_tp": {
+        "sampled_pairs": 20,
+        "covercrypt_us_mean_of_batches": 1148.62,
+        "lp_us_mean_of_batches": 378.92,
+        "paired_reduction_percent": {
+          "mean": 65.59,
+          "ci95_low": 60.56,
+          "ci95_high": 70.62
+        },
+        "reduction_by_first_variant": {
+          "covercrypt": 65.27,
+          "lp-covercrypt": 65.91
+        },
+        "control_adjusted_reduction_percent": {
+          "mean": 65.55,
+          "ci95_low": 64.16,
+          "ci95_high": 66.94
+        }
+      },
+      "diff_tn_tn": {
+        "sampled_pairs": 20,
+        "covercrypt_us_mean_of_batches": 1288.12,
+        "lp_us_mean_of_batches": 301.14,
+        "paired_reduction_percent": {
+          "mean": 76.43,
+          "ci95_low": 75.66,
+          "ci95_high": 77.19
+        },
+        "reduction_by_first_variant": {
+          "covercrypt": 76.85,
+          "lp-covercrypt": 76.0
+        },
+        "control_adjusted_reduction_percent": {
+          "mean": 76.32,
+          "ci95_low": 74.59,
+          "ci95_high": 78.05
+        }
+      },
+      "diff_tn_fp": {
+        "sampled_pairs": 20,
+        "covercrypt_us_mean_of_batches": 1093.81,
+        "lp_us_mean_of_batches": 376.37,
+        "paired_reduction_percent": {
+          "mean": 64.84,
+          "ci95_low": 62.69,
+          "ci95_high": 67.0
+        },
+        "reduction_by_first_variant": {
+          "covercrypt": 64.79,
+          "lp-covercrypt": 64.9
+        }
+      }
+    },
+    "hybridized": {
+      "same_success": {
+        "sampled_pairs": 20,
+        "covercrypt_us_mean_of_batches": 1459.57,
+        "lp_us_mean_of_batches": 1567.17,
+        "paired_reduction_percent": {
+          "mean": -8.73,
+          "ci95_low": -23.11,
+          "ci95_high": 5.66
+        },
+        "reduction_by_first_variant": {
+          "covercrypt": -1.7,
+          "lp-covercrypt": -15.75
+        }
+      },
+      "same_failure": {
+        "sampled_pairs": 20,
+        "covercrypt_us_mean_of_batches": 1658.81,
+        "lp_us_mean_of_batches": 1733.12,
+        "paired_reduction_percent": {
+          "mean": -8.45,
+          "ci95_low": -21.21,
+          "ci95_high": 4.3
+        },
+        "reduction_by_first_variant": {
+          "covercrypt": -11.21,
+          "lp-covercrypt": -5.7
+        }
+      },
+      "diff_tp_tp": {
+        "sampled_pairs": 20,
+        "covercrypt_us_mean_of_batches": 2157.46,
+        "lp_us_mean_of_batches": 613.38,
+        "paired_reduction_percent": {
+          "mean": 70.96,
+          "ci95_low": 66.99,
+          "ci95_high": 74.92
+        },
+        "reduction_by_first_variant": {
+          "covercrypt": 72.21,
+          "lp-covercrypt": 69.7
+        },
+        "control_adjusted_reduction_percent": {
+          "mean": 73.27,
+          "ci95_low": 72.23,
+          "ci95_high": 74.32
+        }
+      },
+      "diff_tn_tn": {
+        "sampled_pairs": 20,
+        "covercrypt_us_mean_of_batches": 2518.37,
+        "lp_us_mean_of_batches": 475.79,
+        "paired_reduction_percent": {
+          "mean": 80.45,
+          "ci95_low": 77.9,
+          "ci95_high": 82.99
+        },
+        "reduction_by_first_variant": {
+          "covercrypt": 80.16,
+          "lp-covercrypt": 80.73
+        },
+        "control_adjusted_reduction_percent": {
+          "mean": 81.98,
+          "ci95_low": 80.95,
+          "ci95_high": 83.02
+        }
+      },
+      "diff_tn_fp": {
+        "sampled_pairs": 20,
+        "covercrypt_us_mean_of_batches": 2019.53,
+        "lp_us_mean_of_batches": 677.58,
+        "paired_reduction_percent": {
+          "mean": 65.82,
+          "ci95_low": 61.22,
+          "ci95_high": 70.43
+        },
+        "reduction_by_first_variant": {
+          "covercrypt": 64.32,
+          "lp-covercrypt": 67.33
+        }
+      }
+    }
+  },
+  "environment": {
+    "os": "Linux-7.1.4-arch1-1-x86_64-with-glibc2.43",
+    "cpu": "AMD Ryzen 9 5900 12-Core Processor",
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14) (Arch Linux rust 1:1.97.1-1)",
+    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30) (Arch Linux rust 1:1.97.1-1)",
+    "lp_git_head": "103a739e5f0ac4b81a18f44f6faf1afdfab1a55d",
+    "lp_worktree_dirty": true
+  }
+}

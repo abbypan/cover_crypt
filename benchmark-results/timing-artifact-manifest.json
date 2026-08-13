@@ -1,0 +1,256 @@
+{
+  "schema": "lp-covercrypt-timing-results-v1",
+  "purpose": "Checksums binding the canonical timing data to the archived reproduction sources and scripts",
+  "files": [
+    {
+      "path": "benches/artifact_manifest.py",
+      "bytes": 5039,
+      "sha256": "b3891f95c02f4d2df8cff17537bf4957e52f9a448b2efe8289984bfe4ae421f6"
+    },
+    {
+      "path": "benches/run_timing_batches.sh",
+      "bytes": 3942,
+      "sha256": "4c7960900d76a95c335528e7c9667ae020474a73a2a66aaeb629838e641b421d"
+    },
+    {
+      "path": "benches/timing_report.py",
+      "bytes": 14180,
+      "sha256": "1dbb63edf45af4f0cc5d2d9a9462afdc39507c62c6410e0c4816b07355f3eb23"
+    },
+    {
+      "path": "benchmark-results/timing-b01-classic-covercrypt.csv",
+      "bytes": 17791,
+      "sha256": "ee7f4b17b738ba427d14bcc4c71fc77b2c32337071f04ec6f3d2d1b56b2b6d39"
+    },
+    {
+      "path": "benchmark-results/timing-b01-classic-lp-covercrypt.csv",
+      "bytes": 16656,
+      "sha256": "5ca7225ddf9b53c8a285f89c238f6e2e1f1c1ebbdec774efd0df7991beb22e1f"
+    },
+    {
+      "path": "benchmark-results/timing-b01-hybridized-covercrypt.csv",
+      "bytes": 18292,
+      "sha256": "6b9eebe486f2560f57ae08120b6ca04e57907d09c54072d01664bec2cb8d0262"
+    },
+    {
+      "path": "benchmark-results/timing-b01-hybridized-lp-covercrypt.csv",
+      "bytes": 17151,
+      "sha256": "cba5ebbd07aff48dddbcb35f504244575e9057b9666864835903e3744da57047"
+    },
+    {
+      "path": "benchmark-results/timing-b02-classic-covercrypt.csv",
+      "bytes": 17790,
+      "sha256": "68ba213a2f58d02026961b45d4b563e4470f1d68a533f0f72ebea4fec452d161"
+    },
+    {
+      "path": "benchmark-results/timing-b02-classic-lp-covercrypt.csv",
+      "bytes": 16636,
+      "sha256": "7b017b54863ee607f113d0bf5c6ea80704de69d983ada427f1b87736f0f8070a"
+    },
+    {
+      "path": "benchmark-results/timing-b02-hybridized-covercrypt.csv",
+      "bytes": 18286,
+      "sha256": "75bc4107efcd4db548f9aa08cb9dd13e385eee47dcdde075f8310b2250587cb3"
+    },
+    {
+      "path": "benchmark-results/timing-b02-hybridized-lp-covercrypt.csv",
+      "bytes": 17137,
+      "sha256": "a572d4536e8be4d707afb7243b5275bda835b548042b7b095712e9b667b624a2"
+    },
+    {
+      "path": "benchmark-results/timing-b03-classic-covercrypt.csv",
+      "bytes": 17792,
+      "sha256": "45841dc1e319b3e90e396ee085b32ba1d3b4c14e1f086fb4d3737db85dcc8d57"
+    },
+    {
+      "path": "benchmark-results/timing-b03-classic-lp-covercrypt.csv",
+      "bytes": 16636,
+      "sha256": "297fb791e462a77712926e0681af847626da41708ca50346e498b62733bbe425"
+    },
+    {
+      "path": "benchmark-results/timing-b03-hybridized-covercrypt.csv",
+      "bytes": 18284,
+      "sha256": "b0c27c982e5745a345713e22e066bff7218fef852ff1df11f2e1191763445d3e"
+    },
+    {
+      "path": "benchmark-results/timing-b03-hybridized-lp-covercrypt.csv",
+      "bytes": 17153,
+      "sha256": "2064f8ccd51d5eb5ab77bd603d3114cd08f52b6a6eac8d50f5245e45f58d0395"
+    },
+    {
+      "path": "benchmark-results/timing-b04-classic-covercrypt.csv",
+      "bytes": 17833,
+      "sha256": "f8466d3048bc1c5452ac456cb1b7b50151f927ed214f0c804b39cb229ef2b166"
+    },
+    {
+      "path": "benchmark-results/timing-b04-classic-lp-covercrypt.csv",
+      "bytes": 16680,
+      "sha256": "00b97ceac19cda4553892621359f40d15b9f7b73420651c6b40b22a9ce873610"
+    },
+    {
+      "path": "benchmark-results/timing-b04-hybridized-covercrypt.csv",
+      "bytes": 18329,
+      "sha256": "52cdbee1a939a25f82cbdceb3739c5073a9f59ecd67075c5502e77a74f20de7e"
+    },
+    {
+      "path": "benchmark-results/timing-b04-hybridized-lp-covercrypt.csv",
+      "bytes": 17160,
+      "sha256": "bea55640f32ee46c6c4f967539e055af08ffe41dbe2654da3efc8be11a7324c0"
+    },
+    {
+      "path": "benchmark-results/timing-b05-classic-covercrypt.csv",
+      "bytes": 17828,
+      "sha256": "65d87dc5cb69aa18012b9557c1a24a58b3d916974d30bca40c7df4f72d4127a1"
+    },
+    {
+      "path": "benchmark-results/timing-b05-classic-lp-covercrypt.csv",
+      "bytes": 16675,
+      "sha256": "ca86a1e304a6b669bd083cd864e18ce3178cdd4deb86a125d8ae8c7de602f788"
+    },
+    {
+      "path": "benchmark-results/timing-b05-hybridized-covercrypt.csv",
+      "bytes": 18331,
+      "sha256": "d5af38a532db6ca7473f216feacaa690bf0e01b6e92c1989dac480de4789b246"
+    },
+    {
+      "path": "benchmark-results/timing-b05-hybridized-lp-covercrypt.csv",
+      "bytes": 17162,
+      "sha256": "1248303e28ce06f60f0a00fdca5aad3bf2471ca6d3fe4478a7054b72716781e3"
+    },
+    {
+      "path": "benchmark-results/timing-b06-classic-covercrypt.csv",
+      "bytes": 17794,
+      "sha256": "ca9df200ef18fc9d26957fa962a557cd020d62c657a7366252d615f4f8cbd2ac"
+    },
+    {
+      "path": "benchmark-results/timing-b06-classic-lp-covercrypt.csv",
+      "bytes": 16646,
+      "sha256": "6643f1c50a8a8aad99789cc830c9239238d44c70a9740b0a815017d7bdcdf7d9"
+    },
+    {
+      "path": "benchmark-results/timing-b06-hybridized-covercrypt.csv",
+      "bytes": 18286,
+      "sha256": "66934db00d35f48356b806522a16eef251d50862ec1a8ff5e0eb9304da111a9e"
+    },
+    {
+      "path": "benchmark-results/timing-b06-hybridized-lp-covercrypt.csv",
+      "bytes": 17144,
+      "sha256": "2affccbc494e0093d71d65b2c99b9e281a5e6612036e4c0d2ff5e577e14b7a91"
+    },
+    {
+      "path": "benchmark-results/timing-b07-classic-covercrypt.csv",
+      "bytes": 17795,
+      "sha256": "3007aec935b617d547bd63d0192c8475dc03bb9e4da6c71a5d96e75eecb974be"
+    },
+    {
+      "path": "benchmark-results/timing-b07-classic-lp-covercrypt.csv",
+      "bytes": 16647,
+      "sha256": "f3f8cf620072308445e121b10d013fc60ca979780f21dcca35fa94cd4a96b891"
+    },
+    {
+      "path": "benchmark-results/timing-b07-hybridized-covercrypt.csv",
+      "bytes": 18286,
+      "sha256": "9db54a75e6ab89261d3e538b3e1418b3a4bb0f7c83652ca1b04babb09b1375b7"
+    },
+    {
+      "path": "benchmark-results/timing-b07-hybridized-lp-covercrypt.csv",
+      "bytes": 17143,
+      "sha256": "25433c0de306ee55278507ddbca0b2afdd3a78cb3472ffc9ee5a02fad615ba84"
+    },
+    {
+      "path": "benchmark-results/timing-b08-classic-covercrypt.csv",
+      "bytes": 17854,
+      "sha256": "e9b99a398184c2e7286da5f70576f5a0134c569fd9ec8036159ed682cdfe29bf"
+    },
+    {
+      "path": "benchmark-results/timing-b08-classic-lp-covercrypt.csv",
+      "bytes": 16697,
+      "sha256": "80728157e4d912444bbbab7b72dece72472e2d87a39a5cd94628d1de65a15523"
+    },
+    {
+      "path": "benchmark-results/timing-b08-hybridized-covercrypt.csv",
+      "bytes": 18357,
+      "sha256": "ff825d63e79ee2b5591cc2979c47df31559709dd0ee1790adb6e593b0db1e728"
+    },
+    {
+      "path": "benchmark-results/timing-b08-hybridized-lp-covercrypt.csv",
+      "bytes": 17217,
+      "sha256": "c17d78af7618abf00ade4bffd0002cb96f6e2b737cc6ac8fea9ad56e2710d788"
+    },
+    {
+      "path": "benchmark-results/timing-b09-classic-covercrypt.csv",
+      "bytes": 17865,
+      "sha256": "a7fa99cc408a99ddbcd9a269e89d8259e403f4382acfdb67863e9657f538a021"
+    },
+    {
+      "path": "benchmark-results/timing-b09-classic-lp-covercrypt.csv",
+      "bytes": 16694,
+      "sha256": "1148ad010f3682fd3aa47217c693b0506ab8eec423bcc6889777122353535e67"
+    },
+    {
+      "path": "benchmark-results/timing-b09-hybridized-covercrypt.csv",
+      "bytes": 18324,
+      "sha256": "a07021e76e62c3bab0b3db129d28f253103adcab4fecc540ddbc8d7c0711f4fe"
+    },
+    {
+      "path": "benchmark-results/timing-b09-hybridized-lp-covercrypt.csv",
+      "bytes": 17173,
+      "sha256": "62c92f8347311ab8c3603fbbb24e2f41f946318baa3769b80576eae50955b309"
+    },
+    {
+      "path": "benchmark-results/timing-b10-classic-covercrypt.csv",
+      "bytes": 17889,
+      "sha256": "6b9b31126ca0969a33ad98a87374dde410ded2f011ad70f134cc26172de72788"
+    },
+    {
+      "path": "benchmark-results/timing-b10-classic-lp-covercrypt.csv",
+      "bytes": 16747,
+      "sha256": "0a067a75872e27a971c5c343821ad65a8eb79918d8dbf9804b2d47aff84232e0"
+    },
+    {
+      "path": "benchmark-results/timing-b10-hybridized-covercrypt.csv",
+      "bytes": 18383,
+      "sha256": "2c0747cb382f631f2fec812dfff6d70a7b169d92b712daefe5f9f36d6d93ab84"
+    },
+    {
+      "path": "benchmark-results/timing-b10-hybridized-lp-covercrypt.csv",
+      "bytes": 17255,
+      "sha256": "31ff39a49efe117512897dcbaea14d6fe09a444ab46fd176c14327fd10976181"
+    },
+    {
+      "path": "benchmark-results/timing-batches.csv",
+      "bytes": 6752,
+      "sha256": "c411d6250f10f4986296984a89a923b937070f70c41fb46d1356f987e4f92666"
+    },
+    {
+      "path": "benchmark-results/timing-pairs.tsv",
+      "bytes": 5539,
+      "sha256": "b22487abdea4da105204597b8f5984aefda63ff82e4cb8a4c33f3ff07e5fb161"
+    },
+    {
+      "path": "benchmark-results/timing-run.log",
+      "bytes": 63600,
+      "sha256": "707c749330dddc45801334971b8393a368725d870f47a579aa2c0fc0423be32d"
+    },
+    {
+      "path": "benchmark-results/timing-source-manifest.json",
+      "bytes": 5797,
+      "sha256": "a89d820cd53382d0a38d272c22db3dff71a6522031240fa34db430aaca80a4e1"
+    },
+    {
+      "path": "benchmark-results/timing-summary.json",
+      "bytes": 5850,
+      "sha256": "fbda54a40336cb9a12fa2f915b6147d806297f57aa2acce805ae8b78bb04ee00"
+    },
+    {
+      "path": "benchmark-results/timing-summary.stdout.json",
+      "bytes": 5850,
+      "sha256": "fbda54a40336cb9a12fa2f915b6147d806297f57aa2acce805ae8b78bb04ee00"
+    },
+    {
+      "path": "examples/evaluation_benchmark.rs",
+      "bytes": 17190,
+      "sha256": "309bd14f935e36a0f6619a1cca1f156290e02dba3255394bc68ba4bce68cfdb5"
+    }
+  ]
+}

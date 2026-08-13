@@ -1,0 +1,188 @@
+{
+  "baseline_ref": "089a548",
+  "complete_downward_closed_keys": 36,
+  "cases": 14,
+  "preservation_cases": 10,
+  "authorization_equivalent_on_preservation_cases": true,
+  "preservation_cases_with_different_canonical_x": 4,
+  "intentional_language_changes": [
+    {
+      "name": "repeated_hierarchy_conjunction",
+      "source": "SEC::LOW && SEC::HIG",
+      "class": "intentional_language_change",
+      "covercrypt_accepted": true,
+      "lp_accepted": true,
+      "authorization_decisions_equal": false,
+      "canonical_right_sets_equal": false,
+      "covercrypt_rights": 1,
+      "lp_rights": 1
+    },
+    {
+      "name": "incomparable_anarchy_conjunction",
+      "source": "DPT::DEV && DPT::MKG",
+      "class": "intentional_language_change",
+      "covercrypt_accepted": true,
+      "lp_accepted": false,
+      "authorization_decisions_equal": null,
+      "canonical_right_sets_equal": null,
+      "covercrypt_rights": 1,
+      "lp_rights": 0
+    }
+  ],
+  "rows": [
+    {
+      "name": "atomic",
+      "source": "DPT::DEV",
+      "class": "preservation",
+      "covercrypt_accepted": true,
+      "lp_accepted": true,
+      "authorization_decisions_equal": true,
+      "canonical_right_sets_equal": true,
+      "covercrypt_rights": 1,
+      "lp_rights": 1
+    },
+    {
+      "name": "duplicate_clause",
+      "source": "DPT::DEV || DPT::DEV",
+      "class": "preservation",
+      "covercrypt_accepted": true,
+      "lp_accepted": true,
+      "authorization_decisions_equal": true,
+      "canonical_right_sets_equal": true,
+      "covercrypt_rights": 1,
+      "lp_rights": 1
+    },
+    {
+      "name": "hierarchical_subsumption",
+      "source": "SEC::LOW || SEC::HIG",
+      "class": "preservation",
+      "covercrypt_accepted": true,
+      "lp_accepted": true,
+      "authorization_decisions_equal": true,
+      "canonical_right_sets_equal": false,
+      "covercrypt_rights": 2,
+      "lp_rights": 1
+    },
+    {
+      "name": "cross_dimension_subsumption",
+      "source": "DPT::DEV || (DPT::DEV && SEC::HIG)",
+      "class": "preservation",
+      "covercrypt_accepted": true,
+      "lp_accepted": true,
+      "authorization_decisions_equal": true,
+      "canonical_right_sets_equal": false,
+      "covercrypt_rights": 2,
+      "lp_rights": 1
+    },
+    {
+      "name": "dnf_overlap",
+      "source": "(SEC::LOW || SEC::HIG) && (DPT::DEV || DPT::MKG)",
+      "class": "preservation",
+      "covercrypt_accepted": true,
+      "lp_accepted": true,
+      "authorization_decisions_equal": true,
+      "canonical_right_sets_equal": false,
+      "covercrypt_rights": 4,
+      "lp_rights": 2
+    },
+    {
+      "name": "redundant_hierarchical_disjunct",
+      "source": "(DPT::DEV && SEC::LOW) || (DPT::DEV && SEC::HIG)",
+      "class": "preservation",
+      "covercrypt_accepted": true,
+      "lp_accepted": true,
+      "authorization_decisions_equal": true,
+      "canonical_right_sets_equal": false,
+      "covercrypt_rights": 2,
+      "lp_rights": 1
+    },
+    {
+      "name": "right_broadcast_or",
+      "source": "SEC::LOW || *",
+      "class": "preservation",
+      "covercrypt_accepted": true,
+      "lp_accepted": true,
+      "authorization_decisions_equal": true,
+      "canonical_right_sets_equal": true,
+      "covercrypt_rights": 1,
+      "lp_rights": 1
+    },
+    {
+      "name": "right_broadcast_and",
+      "source": "SEC::LOW && *",
+      "class": "preservation",
+      "covercrypt_accepted": true,
+      "lp_accepted": true,
+      "authorization_decisions_equal": true,
+      "canonical_right_sets_equal": true,
+      "covercrypt_rights": 1,
+      "lp_rights": 1
+    },
+    {
+      "name": "hierarchical_maximum",
+      "source": "SEC::$",
+      "class": "preservation",
+      "covercrypt_accepted": true,
+      "lp_accepted": true,
+      "authorization_decisions_equal": true,
+      "canonical_right_sets_equal": true,
+      "covercrypt_rights": 1,
+      "lp_rights": 1
+    },
+    {
+      "name": "anarchic_maximum",
+      "source": "DPT::$",
+      "class": "preservation",
+      "covercrypt_accepted": true,
+      "lp_accepted": true,
+      "authorization_decisions_equal": true,
+      "canonical_right_sets_equal": true,
+      "covercrypt_rights": 1,
+      "lp_rights": 1
+    },
+    {
+      "name": "repeated_hierarchy_conjunction",
+      "source": "SEC::LOW && SEC::HIG",
+      "class": "intentional_language_change",
+      "covercrypt_accepted": true,
+      "lp_accepted": true,
+      "authorization_decisions_equal": false,
+      "canonical_right_sets_equal": false,
+      "covercrypt_rights": 1,
+      "lp_rights": 1
+    },
+    {
+      "name": "incomparable_anarchy_conjunction",
+      "source": "DPT::DEV && DPT::MKG",
+      "class": "intentional_language_change",
+      "covercrypt_accepted": true,
+      "lp_accepted": false,
+      "authorization_decisions_equal": null,
+      "canonical_right_sets_equal": null,
+      "covercrypt_rights": 1,
+      "lp_rights": 0
+    },
+    {
+      "name": "unknown_attribute",
+      "source": "DPT::UNKNOWN",
+      "class": "rejected_input",
+      "covercrypt_accepted": false,
+      "lp_accepted": false,
+      "authorization_decisions_equal": null,
+      "canonical_right_sets_equal": null,
+      "covercrypt_rights": 0,
+      "lp_rights": 0
+    },
+    {
+      "name": "unknown_dimension",
+      "source": "UNKNOWN::VALUE",
+      "class": "rejected_input",
+      "covercrypt_accepted": false,
+      "lp_accepted": false,
+      "authorization_decisions_equal": null,
+      "canonical_right_sets_equal": null,
+      "covercrypt_rights": 0,
+      "lp_rights": 0
+    }
+  ]
+}

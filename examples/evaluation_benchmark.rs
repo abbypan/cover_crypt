@@ -14,8 +14,9 @@ use cosmian_crypto_core::{
     Aes256Gcm,
 };
 use std::{
+    collections::HashSet,
     env,
-    fs::File,
+    fs::{read_to_string, File},
     hint::black_box,
     io::{BufWriter, Write},
     path::PathBuf,
@@ -37,6 +38,9 @@ struct Config {
     output: PathBuf,
     shard_index: usize,
     shard_count: usize,
+    pairs_file: Option<PathBuf>,
+    batch_id: u32,
+    order_position: u8,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -73,7 +77,8 @@ fn usage() -> &'static str {
     "usage: evaluation_benchmark --variant <covercrypt|lp-covercrypt> \
      --scenario <classic|hybridized> \
      --output <csv> [--iterations N] [--warmup N] \
-     [--shard-index N --shard-count N]"
+     [--shard-index N --shard-count N] [--pairs-file TSV] \
+     [--batch-id N --order-position <1|2>]"
 }
 
 fn parse_args() -> Result<Config, String> {
@@ -84,12 +89,16 @@ fn parse_args() -> Result<Config, String> {
     let mut output = None;
     let mut shard_index = 0usize;
     let mut shard_count = 1usize;
+    let mut pairs_file = None;
+    let mut batch_id = 0u32;
+    let mut order_position = 0u8;
     let mut args = env::args().skip(1);
 
     while let Some(arg) = args.next() {
         let value = match arg.as_str() {
             "--variant" | "--scenario" | "--output" | "--iterations" | "--warmup"
-            | "--shard-index" | "--shard-count" => args
+            | "--shard-index" | "--shard-count" | "--pairs-file" | "--batch-id"
+            | "--order-position" => args
                 .next()
                 .ok_or_else(|| format!("missing value after {arg}"))?,
             "--help" | "-h" => return Err(usage().to_string()),
@@ -120,6 +129,17 @@ fn parse_args() -> Result<Config, String> {
                     .parse()
                     .map_err(|_| "--shard-count must be a positive integer".to_string())?;
             }
+            "--pairs-file" => pairs_file = Some(PathBuf::from(value)),
+            "--batch-id" => {
+                batch_id = value
+                    .parse()
+                    .map_err(|_| "--batch-id must be an integer".to_string())?;
+            }
+            "--order-position" => {
+                order_position = value
+                    .parse()
+                    .map_err(|_| "--order-position must be 1 or 2".to_string())?;
+            }
             _ => unreachable!(),
         }
     }
@@ -134,6 +154,9 @@ fn parse_args() -> Result<Config, String> {
     if shard_count == 0 || shard_index >= shard_count {
         return Err("shard index must be less than a nonzero shard count".to_string());
     }
+    if order_position > 2 {
+        return Err("--order-position must be 1 or 2".to_string());
+    }
 
     Ok(Config {
         variant,
@@ -143,6 +166,9 @@ fn parse_args() -> Result<Config, String> {
         output: output.ok_or_else(|| format!("--output is required\n{}", usage()))?,
         shard_index,
         shard_count,
+        pairs_file,
+        batch_id,
+        order_position,
     })
 }
 
@@ -275,11 +301,48 @@ fn bytes_hex(value: &[u8]) -> String {
         .join("")
 }
 
+fn selected_pairs(path: Option<&PathBuf>) -> Result<Option<HashSet<(String, String)>>, String> {
+    let Some(path) = path else {
+        return Ok(None);
+    };
+    let input = read_to_string(path).map_err(|error| format!("{}: {error}", path.display()))?;
+    let mut pairs = HashSet::new();
+    for (line_number, line) in input.lines().enumerate() {
+        if line_number == 0 && line == "enc_ap\tuser_ap\tstratum" {
+            continue;
+        }
+        let mut fields = line.split('\t');
+        let enc_ap = fields.next().unwrap_or_default();
+        let user_ap = fields.next().unwrap_or_default();
+        let stratum = fields.next().unwrap_or_default();
+        if enc_ap.is_empty() || user_ap.is_empty() || stratum.is_empty() || fields.next().is_some()
+        {
+            return Err(format!(
+                "{}:{}: expected three TSV fields",
+                path.display(),
+                line_number + 1
+            ));
+        }
+        if !pairs.insert((enc_ap.to_string(), user_ap.to_string())) {
+            return Err(format!(
+                "{}:{}: duplicate policy pair",
+                path.display(),
+                line_number + 1
+            ));
+        }
+    }
+    if pairs.is_empty() {
+        return Err(format!("{}: no selected pairs", path.display()));
+    }
+    Ok(Some(pairs))
+}
+
 fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
     let enc_policies = encryption_policies();
     let usk_policies = user_policies();
     assert_eq!(enc_policies.len(), 79);
     assert_eq!(usk_policies.len(), 79);
+    let selected_pairs = selected_pairs(config.pairs_file.as_ref())?;
 
     let cc = Covercrypt::default();
     let (mut msk, mpk) = setup(&cc, config.scenario)?;
@@ -287,7 +350,7 @@ fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
     let mut output = BufWriter::new(output);
     writeln!(
         output,
-        "scenario,variant,baseline_ref,enc_ap,user_ap,implementation_user_ap,y_relation,user_rights,user_key_bytes,ciphertext_rights_hex,ciphertext_bytes,decryption_result,iterations,total_ns,mean_ns"
+        "scenario,variant,baseline_ref,enc_ap,user_ap,implementation_user_ap,y_relation,user_rights,user_key_bytes,ciphertext_rights_hex,ciphertext_bytes,decryption_result,iterations,total_ns,mean_ns,batch_id,order_position"
     )?;
 
     let selected_enc_policies = enc_policies
@@ -296,7 +359,19 @@ fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
         .filter(|(index, _)| index % config.shard_count == config.shard_index)
         .map(|(_, policy)| policy)
         .collect::<Vec<_>>();
-    let total_pairs = selected_enc_policies.len() * usk_policies.len();
+    let total_pairs = selected_enc_policies
+        .iter()
+        .flat_map(|enc_policy| {
+            usk_policies
+                .iter()
+                .map(move |user_policy| (*enc_policy, user_policy))
+        })
+        .filter(|(enc_policy, user_policy)| {
+            selected_pairs.as_ref().is_none_or(|pairs| {
+                pairs.contains(&(enc_policy.to_string(), user_policy.to_string()))
+            })
+        })
+        .count();
     let mut pair_index = 0usize;
     eprintln!(
         "{} {} shard {}/{}: {} ciphertext policies x {} user policies = {} pairs; {} iterations/pair",
@@ -311,6 +386,13 @@ fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
     );
 
     for enc_policy in selected_enc_policies {
+        if selected_pairs.as_ref().is_some_and(|pairs| {
+            !pairs
+                .iter()
+                .any(|(selected_enc, _)| selected_enc == enc_policy)
+        }) {
+            continue;
+        }
         let eap = AccessPolicy::parse(enc_policy)?;
         let mut ciphertext_rights_hex = msk
             .access_structure
@@ -330,6 +412,12 @@ fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
         };
 
         for user_policy in &usk_policies {
+            if selected_pairs
+                .as_ref()
+                .is_some_and(|pairs| !pairs.contains(&(enc_policy.clone(), user_policy.clone())))
+            {
+                continue;
+            }
             pair_index += 1;
             let implementation_policy = if config.variant == "covercrypt" {
                 baseline_user_policy(user_policy)
@@ -376,7 +464,7 @@ fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
 
             writeln!(
                 output,
-                "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{:.3}",
+                "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{:.3},{},{}",
                 config.scenario.name(),
                 config.variant,
                 BASELINE_REF,
@@ -391,7 +479,9 @@ fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
                 outcome,
                 config.iterations,
                 total_ns,
-                mean_ns
+                mean_ns,
+                config.batch_id,
+                config.order_position
             )?;
         }
         output.flush()?;

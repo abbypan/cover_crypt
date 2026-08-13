@@ -750,6 +750,30 @@ mod tests {
     }
 
     #[test]
+    fn test_maximum_has_explicit_key_and_ciphertext_polarity() -> Result<(), Error> {
+        let mut structure = AccessStructure::new();
+        gen_structure(&mut structure, false)?;
+
+        let x_maximum = structure.ap_to_enc_rights(&AccessPolicy::parse("DPT::$")?)?;
+        let x_concrete = structure.ap_to_enc_rights(&AccessPolicy::parse("DPT::HR")?)?;
+        let x_omitted = structure.ap_to_enc_rights(&AccessPolicy::parse("*")?)?;
+        let y_concrete = structure.ap_to_usk_rights(&AccessPolicy::parse("DPT::HR")?)?;
+        let y_maximum = structure.ap_to_usk_rights(&AccessPolicy::parse("DPT::$")?)?;
+
+        // A ciphertext maximum requires the maximum coordinate; it is not a
+        // wildcard satisfied by an ordinary concrete key value.
+        assert!(x_maximum.is_disjoint(&y_concrete));
+        assert!(!x_maximum.is_disjoint(&y_maximum));
+
+        // A maximum-bearing key has the full lower set and therefore satisfies
+        // concrete and omitted ciphertext requirements in the dimension.
+        assert!(!x_concrete.is_disjoint(&y_maximum));
+        assert!(!x_omitted.is_disjoint(&y_concrete));
+
+        Ok(())
+    }
+
+    #[test]
     fn test_invalid_anarchic_conjunction_is_rejected() -> Result<(), Error> {
         let mut structure = AccessStructure::new();
         gen_structure(&mut structure, false)?;

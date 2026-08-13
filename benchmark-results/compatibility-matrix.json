@@ -1,0 +1,398 @@
+{
+  "baseline_ref": "089a548",
+  "rows": 8,
+  "scenarios": [
+    "classic",
+    "hybridized"
+  ],
+  "stateful_objects_same_version_only": [
+    "AccessStructure",
+    "MSK",
+    "MPK"
+  ],
+  "cross_version_wire_objects": [
+    "USK",
+    "PKE ciphertext"
+  ],
+  "all_expected_decisions_observed": true,
+  "legacy_v15_omission_key_remains_broad_when_consumed_by_lp": true,
+  "lp_omission_key_remains_closed_when_consumed_by_v15": true,
+  "matrix": [
+    {
+      "producer": "covercrypt",
+      "consumer": "covercrypt",
+      "scenario": "classic",
+      "stateful_objects": {
+        "access_structure_deserialized": true,
+        "msk_deserialized": true,
+        "mpk_deserialized": true,
+        "expected": "accepted"
+      },
+      "stateless_wire_objects": {
+        "usk_deserialized": true,
+        "pke_ciphertexts_deserialized": true,
+        "decisions": [
+          {
+            "case": "maximum_key_broadcast",
+            "actual": true,
+            "expected": true
+          },
+          {
+            "case": "maximum_key_hierarchy",
+            "actual": true,
+            "expected": true
+          },
+          {
+            "case": "maximum_key_maximum",
+            "actual": true,
+            "expected": true
+          },
+          {
+            "case": "concrete_key_maximum",
+            "actual": false,
+            "expected": false
+          },
+          {
+            "case": "concrete_key_boolean_subsumption",
+            "actual": true,
+            "expected": true
+          },
+          {
+            "case": "omitted_key_concrete_dimension",
+            "actual": true,
+            "expected": true
+          }
+        ]
+      }
+    },
+    {
+      "producer": "covercrypt",
+      "consumer": "lp-covercrypt",
+      "scenario": "classic",
+      "stateful_objects": {
+        "access_structure_deserialized": false,
+        "msk_deserialized": false,
+        "mpk_deserialized": false,
+        "expected": "rejected_version_boundary"
+      },
+      "stateless_wire_objects": {
+        "usk_deserialized": true,
+        "pke_ciphertexts_deserialized": true,
+        "decisions": [
+          {
+            "case": "maximum_key_broadcast",
+            "actual": true,
+            "expected": true
+          },
+          {
+            "case": "maximum_key_hierarchy",
+            "actual": true,
+            "expected": true
+          },
+          {
+            "case": "maximum_key_maximum",
+            "actual": true,
+            "expected": true
+          },
+          {
+            "case": "concrete_key_maximum",
+            "actual": false,
+            "expected": false
+          },
+          {
+            "case": "concrete_key_boolean_subsumption",
+            "actual": true,
+            "expected": true
+          },
+          {
+            "case": "omitted_key_concrete_dimension",
+            "actual": true,
+            "expected": true
+          }
+        ]
+      }
+    },
+    {
+      "producer": "lp-covercrypt",
+      "consumer": "covercrypt",
+      "scenario": "classic",
+      "stateful_objects": {
+        "access_structure_deserialized": false,
+        "msk_deserialized": false,
+        "mpk_deserialized": false,
+        "expected": "rejected_version_boundary"
+      },
+      "stateless_wire_objects": {
+        "usk_deserialized": true,
+        "pke_ciphertexts_deserialized": true,
+        "decisions": [
+          {
+            "case": "maximum_key_broadcast",
+            "actual": true,
+            "expected": true
+          },
+          {
+            "case": "maximum_key_hierarchy",
+            "actual": true,
+            "expected": true
+          },
+          {
+            "case": "maximum_key_maximum",
+            "actual": true,
+            "expected": true
+          },
+          {
+            "case": "concrete_key_maximum",
+            "actual": false,
+            "expected": false
+          },
+          {
+            "case": "concrete_key_boolean_subsumption",
+            "actual": true,
+            "expected": true
+          },
+          {
+            "case": "omitted_key_concrete_dimension",
+            "actual": false,
+            "expected": false
+          }
+        ]
+      }
+    },
+    {
+      "producer": "lp-covercrypt",
+      "consumer": "lp-covercrypt",
+      "scenario": "classic",
+      "stateful_objects": {
+        "access_structure_deserialized": true,
+        "msk_deserialized": true,
+        "mpk_deserialized": true,
+        "expected": "accepted"
+      },
+      "stateless_wire_objects": {
+        "usk_deserialized": true,
+        "pke_ciphertexts_deserialized": true,
+        "decisions": [
+          {
+            "case": "maximum_key_broadcast",
+            "actual": true,
+            "expected": true
+          },
+          {
+            "case": "maximum_key_hierarchy",
+            "actual": true,
+            "expected": true
+          },
+          {
+            "case": "maximum_key_maximum",
+            "actual": true,
+            "expected": true
+          },
+          {
+            "case": "concrete_key_maximum",
+            "actual": false,
+            "expected": false
+          },
+          {
+            "case": "concrete_key_boolean_subsumption",
+            "actual": true,
+            "expected": true
+          },
+          {
+            "case": "omitted_key_concrete_dimension",
+            "actual": false,
+            "expected": false
+          }
+        ]
+      }
+    },
+    {
+      "producer": "covercrypt",
+      "consumer": "covercrypt",
+      "scenario": "hybridized",
+      "stateful_objects": {
+        "access_structure_deserialized": true,
+        "msk_deserialized": true,
+        "mpk_deserialized": true,
+        "expected": "accepted"
+      },
+      "stateless_wire_objects": {
+        "usk_deserialized": true,
+        "pke_ciphertexts_deserialized": true,
+        "decisions": [
+          {
+            "case": "maximum_key_broadcast",
+            "actual": true,
+            "expected": true
+          },
+          {
+            "case": "maximum_key_hierarchy",
+            "actual": true,
+            "expected": true
+          },
+          {
+            "case": "maximum_key_maximum",
+            "actual": true,
+            "expected": true
+          },
+          {
+            "case": "concrete_key_maximum",
+            "actual": false,
+            "expected": false
+          },
+          {
+            "case": "concrete_key_boolean_subsumption",
+            "actual": true,
+            "expected": true
+          },
+          {
+            "case": "omitted_key_concrete_dimension",
+            "actual": true,
+            "expected": true
+          }
+        ]
+      }
+    },
+    {
+      "producer": "covercrypt",
+      "consumer": "lp-covercrypt",
+      "scenario": "hybridized",
+      "stateful_objects": {
+        "access_structure_deserialized": false,
+        "msk_deserialized": false,
+        "mpk_deserialized": false,
+        "expected": "rejected_version_boundary"
+      },
+      "stateless_wire_objects": {
+        "usk_deserialized": true,
+        "pke_ciphertexts_deserialized": true,
+        "decisions": [
+          {
+            "case": "maximum_key_broadcast",
+            "actual": true,
+            "expected": true
+          },
+          {
+            "case": "maximum_key_hierarchy",
+            "actual": true,
+            "expected": true
+          },
+          {
+            "case": "maximum_key_maximum",
+            "actual": true,
+            "expected": true
+          },
+          {
+            "case": "concrete_key_maximum",
+            "actual": false,
+            "expected": false
+          },
+          {
+            "case": "concrete_key_boolean_subsumption",
+            "actual": true,
+            "expected": true
+          },
+          {
+            "case": "omitted_key_concrete_dimension",
+            "actual": true,
+            "expected": true
+          }
+        ]
+      }
+    },
+    {
+      "producer": "lp-covercrypt",
+      "consumer": "covercrypt",
+      "scenario": "hybridized",
+      "stateful_objects": {
+        "access_structure_deserialized": false,
+        "msk_deserialized": false,
+        "mpk_deserialized": false,
+        "expected": "rejected_version_boundary"
+      },
+      "stateless_wire_objects": {
+        "usk_deserialized": true,
+        "pke_ciphertexts_deserialized": true,
+        "decisions": [
+          {
+            "case": "maximum_key_broadcast",
+            "actual": true,
+            "expected": true
+          },
+          {
+            "case": "maximum_key_hierarchy",
+            "actual": true,
+            "expected": true
+          },
+          {
+            "case": "maximum_key_maximum",
+            "actual": true,
+            "expected": true
+          },
+          {
+            "case": "concrete_key_maximum",
+            "actual": false,
+            "expected": false
+          },
+          {
+            "case": "concrete_key_boolean_subsumption",
+            "actual": true,
+            "expected": true
+          },
+          {
+            "case": "omitted_key_concrete_dimension",
+            "actual": false,
+            "expected": false
+          }
+        ]
+      }
+    },
+    {
+      "producer": "lp-covercrypt",
+      "consumer": "lp-covercrypt",
+      "scenario": "hybridized",
+      "stateful_objects": {
+        "access_structure_deserialized": true,
+        "msk_deserialized": true,
+        "mpk_deserialized": true,
+        "expected": "accepted"
+      },
+      "stateless_wire_objects": {
+        "usk_deserialized": true,
+        "pke_ciphertexts_deserialized": true,
+        "decisions": [
+          {
+            "case": "maximum_key_broadcast",
+            "actual": true,
+            "expected": true
+          },
+          {
+            "case": "maximum_key_hierarchy",
+            "actual": true,
+            "expected": true
+          },
+          {
+            "case": "maximum_key_maximum",
+            "actual": true,
+            "expected": true
+          },
+          {
+            "case": "concrete_key_maximum",
+            "actual": false,
+            "expected": false
+          },
+          {
+            "case": "concrete_key_boolean_subsumption",
+            "actual": true,
+            "expected": true
+          },
+          {
+            "case": "omitted_key_concrete_dimension",
+            "actual": false,
+            "expected": false
+          }
+        ]
+      }
+    }
+  ]
+}

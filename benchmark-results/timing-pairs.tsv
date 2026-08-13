@@ -1,0 +1,101 @@
+enc_ap	user_ap	stratum
+CTR::FR	SEC::MED && DPT::$ && CTR::FR	same_success
+DPT::DEV	SEC::MED && DPT::$ && CTR::EN	same_success
+DPT::DEV && CTR::$	SEC::LOW && DPT::$ && CTR::$	same_success
+DPT::DEV && CTR::EN	SEC::MED && DPT::DEV && CTR::$	same_success
+DPT::MKG && CTR::EN	SEC::$ && DPT::MKG && CTR::$	same_success
+DPT::MKG && CTR::EN	SEC::$ && DPT::MKG && CTR::EN	same_success
+DPT::MKG && CTR::FR	SEC::$ && DPT::$ && CTR::FR	same_success
+SEC::HIG	SEC::$ && DPT::$ && CTR::$	same_success
+SEC::HIG && CTR::EN	SEC::HIG && DPT::MKG && CTR::$	same_success
+SEC::LOW	SEC::MED && DPT::$ && CTR::EN	same_success
+SEC::LOW && CTR::EN	SEC::$ && DPT::DEV && CTR::EN	same_success
+SEC::LOW && DPT::DEV	SEC::HIG && DPT::$ && CTR::EN	same_success
+SEC::LOW && DPT::DEV	SEC::MED && DPT::$ && CTR::EN	same_success
+SEC::LOW && DPT::DEV	SEC::MED && DPT::DEV && CTR::$	same_success
+SEC::LOW && DPT::MKG	SEC::$ && DPT::$ && CTR::$	same_success
+SEC::LOW && DPT::MKG && CTR::EN	SEC::LOW && DPT::MKG && CTR::$	same_success
+SEC::LOW && DPT::MKG && CTR::EN	SEC::LOW && DPT::MKG && CTR::EN	same_success
+SEC::MED	SEC::$ && DPT::$ && CTR::FR	same_success
+SEC::MED && CTR::EN	SEC::$ && DPT::$ && CTR::EN	same_success
+SEC::MED && DPT::MKG && CTR::EN	SEC::$ && DPT::MKG && CTR::EN	same_success
+DPT::$ && CTR::$	SEC::HIG && DPT::DEV && CTR::EN	same_failure
+DPT::$ && CTR::$	SEC::MED && DPT::MKG && CTR::$	same_failure
+DPT::DEV && CTR::FR	SEC::$ && DPT::$ && CTR::EN	same_failure
+DPT::MKG && CTR::FR	SEC::MED && DPT::DEV && CTR::$	same_failure
+SEC::$ && CTR::EN	SEC::MED && DPT::MKG && CTR::EN	same_failure
+SEC::$ && DPT::$	SEC::MED && DPT::DEV && CTR::$	same_failure
+SEC::$ && DPT::$ && CTR::$	SEC::MED && DPT::DEV && CTR::$	same_failure
+SEC::$ && DPT::DEV && CTR::$	SEC::MED && DPT::$ && CTR::FR	same_failure
+SEC::$ && DPT::DEV && CTR::$	SEC::MED && DPT::DEV && CTR::EN	same_failure
+SEC::$ && DPT::MKG && CTR::$	SEC::LOW && DPT::MKG && CTR::EN	same_failure
+SEC::$ && DPT::MKG && CTR::FR	SEC::LOW && DPT::DEV && CTR::EN	same_failure
+SEC::HIG	SEC::MED && DPT::MKG && CTR::EN	same_failure
+SEC::HIG && CTR::FR	SEC::LOW && DPT::$ && CTR::$	same_failure
+SEC::LOW && DPT::$ && CTR::$	SEC::$ && DPT::MKG && CTR::$	same_failure
+SEC::LOW && DPT::$ && CTR::EN	SEC::MED && DPT::MKG && CTR::FR	same_failure
+SEC::LOW && DPT::DEV && CTR::$	SEC::HIG && DPT::$ && CTR::EN	same_failure
+SEC::MED && CTR::$	SEC::HIG && DPT::DEV && CTR::EN	same_failure
+SEC::MED && DPT::$	SEC::$ && DPT::MKG && CTR::FR	same_failure
+SEC::MED && DPT::DEV && CTR::$	SEC::$ && DPT::MKG && CTR::EN	same_failure
+SEC::MED && DPT::DEV && CTR::FR	SEC::LOW && DPT::MKG && CTR::EN	same_failure
+CTR::EN	DPT::$ && CTR::EN	diff_tp_tp
+CTR::FR	CTR::$	diff_tp_tp
+CTR::FR	SEC::HIG && CTR::FR	diff_tp_tp
+DPT::DEV && CTR::$	DPT::DEV && CTR::$	diff_tp_tp
+DPT::DEV && CTR::EN	DPT::$ && CTR::EN	diff_tp_tp
+DPT::DEV && CTR::EN	DPT::DEV && CTR::$	diff_tp_tp
+SEC::$ && DPT::DEV	SEC::$ && DPT::$	diff_tp_tp
+SEC::HIG	SEC::HIG && DPT::$	diff_tp_tp
+SEC::HIG && DPT::MKG	SEC::$ && DPT::$	diff_tp_tp
+SEC::LOW	SEC::$ && CTR::$	diff_tp_tp
+SEC::LOW	SEC::MED && DPT::DEV	diff_tp_tp
+SEC::LOW && CTR::$	SEC::LOW && CTR::$	diff_tp_tp
+SEC::LOW && CTR::$	SEC::MED && CTR::$	diff_tp_tp
+SEC::LOW && CTR::EN	SEC::$ && CTR::$	diff_tp_tp
+SEC::LOW && CTR::EN	SEC::$ && CTR::EN	diff_tp_tp
+SEC::LOW && CTR::EN	SEC::LOW && CTR::EN	diff_tp_tp
+SEC::MED	SEC::$ && DPT::DEV	diff_tp_tp
+SEC::MED	SEC::HIG	diff_tp_tp
+SEC::MED && CTR::$	SEC::HIG && CTR::$	diff_tp_tp
+SEC::MED && CTR::FR	SEC::MED && CTR::FR	diff_tp_tp
+CTR::EN	DPT::MKG && CTR::FR	diff_tn_tn
+CTR::EN	SEC::MED && CTR::FR	diff_tn_tn
+CTR::FR	DPT::DEV && CTR::EN	diff_tn_tn
+DPT::DEV && CTR::EN	DPT::MKG && CTR::FR	diff_tn_tn
+DPT::MKG && CTR::$	CTR::FR	diff_tn_tn
+DPT::MKG && CTR::$	SEC::MED && DPT::DEV	diff_tn_tn
+SEC::$ && DPT::$	SEC::$ && DPT::DEV	diff_tn_tn
+SEC::$ && DPT::$ && CTR::EN	SEC::$ && DPT::DEV	diff_tn_tn
+SEC::$ && DPT::DEV && CTR::FR	SEC::MED && CTR::FR	diff_tn_tn
+SEC::$ && DPT::MKG && CTR::$	SEC::$ && DPT::DEV	diff_tn_tn
+SEC::HIG && CTR::$	SEC::MED && CTR::EN	diff_tn_tn
+SEC::HIG && DPT::$	SEC::$ && DPT::DEV	diff_tn_tn
+SEC::HIG && DPT::$ && CTR::$	DPT::DEV && CTR::EN	diff_tn_tn
+SEC::HIG && DPT::$ && CTR::FR	SEC::MED && CTR::$	diff_tn_tn
+SEC::HIG && DPT::DEV && CTR::FR	DPT::MKG && CTR::EN	diff_tn_tn
+SEC::LOW && DPT::$ && CTR::$	CTR::FR	diff_tn_tn
+SEC::LOW && DPT::MKG	SEC::$ && DPT::DEV	diff_tn_tn
+SEC::MED && DPT::$ && CTR::EN	CTR::FR	diff_tn_tn
+SEC::MED && DPT::$ && CTR::FR	SEC::LOW && DPT::DEV	diff_tn_tn
+SEC::MED && DPT::MKG && CTR::FR	CTR::EN	diff_tn_tn
+DPT::$ && CTR::FR	SEC::LOW	diff_tn_fp
+SEC::$ && CTR::EN	CTR::EN	diff_tn_fp
+SEC::$ && DPT::DEV	DPT::DEV && CTR::EN	diff_tn_fp
+SEC::$ && DPT::MKG	SEC::$ && CTR::EN	diff_tn_fp
+SEC::$ && DPT::MKG && CTR::$	DPT::MKG && CTR::$	diff_tn_fp
+SEC::HIG	DPT::MKG	diff_tn_fp
+SEC::HIG && CTR::EN	DPT::$ && CTR::EN	diff_tn_fp
+SEC::HIG && CTR::FR	SEC::$ && DPT::DEV	diff_tn_fp
+SEC::HIG && DPT::$	DPT::$ && CTR::EN	diff_tn_fp
+SEC::HIG && DPT::MKG && CTR::EN	SEC::$ && DPT::MKG	diff_tn_fp
+SEC::LOW && DPT::DEV && CTR::EN	SEC::HIG && CTR::EN	diff_tn_fp
+SEC::LOW && DPT::MKG && CTR::$	SEC::$ && DPT::MKG	diff_tn_fp
+SEC::LOW && DPT::MKG && CTR::FR	DPT::$ && CTR::$	diff_tn_fp
+SEC::LOW && DPT::MKG && CTR::FR	SEC::$ && DPT::MKG	diff_tn_fp
+SEC::MED && DPT::$	CTR::$	diff_tn_fp
+SEC::MED && DPT::$	SEC::HIG	diff_tn_fp
+SEC::MED && DPT::DEV && CTR::EN	SEC::HIG && CTR::$	diff_tn_fp
+SEC::MED && DPT::DEV && CTR::FR	SEC::HIG	diff_tn_fp
+SEC::MED && DPT::MKG && CTR::$	DPT::$ && CTR::$	diff_tn_fp
+SEC::MED && DPT::MKG && CTR::FR	SEC::MED && CTR::FR	diff_tn_fp

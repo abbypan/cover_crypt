@@ -30,9 +30,16 @@ Two scenarios are measured independently:
 - **Classic**: all non-bottom rights use the Ristretto25519-based component;
 - **Hybridized**: all non-bottom rights additionally use ML-KEM-512.
 
-The paper run performs 20 warm-up decryptions followed by 2,000 timed
-decryptions for every pair. It assigns the corpus to 12 worker processes pinned
-to distinct logical CPUs. Operations for an individual pair remain serial.
+The full $79\times79$ corpus supplies authorization, compiled-right, and
+serialized-size results.  Decryption timing uses a fixed, seeded stratified
+sample: 20 pairs from each of the two Same-Y and three Diff-Y outcome strata
+(100 pairs per scenario). It runs 10 replicated single-worker batches, with
+20 warm-ups and 300 timed decryptions per pair and batch.  Implementation and
+scenario order alternate between batches, so each implementation runs first
+in five batches per scenario.  Batch observations and all raw pair means are
+retained for paired 95% Student-t confidence intervals.
+The intervals describe this fixed sample and host; consecutive batches can
+remain temporally correlated and are not evidence for arbitrary deployments.
 
 ## Requirements
 
@@ -61,8 +68,10 @@ benchmark:
 
 ```bash
 cargo test test_exhaustive_small_model_semantics_144_policies
+cargo test test_maximum_has_explicit_key_and_ciphertext_polarity
 cargo test test_missing_dimension_scaling_matches_cartesian_product
 cargo run --release --example compiler_scaling
+benches/run_cross_version_validation.sh
 ```
 
 The first command compares exact ciphertext/key right sets and all 20,736
@@ -72,6 +81,11 @@ mixed broadcast. It also checks rejection of unknown names and incompatible
 anarchic conjunctions. The second checks the
 predicted Cartesian-product growth on synthetic structures with two through
 five dimensions; the release example reports the corresponding compiler cost.
+The polarity test makes the two uses of `D::$` explicit: it is a full lower-set
+grant in a key policy and a single maximum-coordinate requirement in a
+ciphertext policy. The cross-version runner builds clean public v15 and LP
+binaries, compares focused Boolean authorization decisions, and executes the
+Classic/Hybridized producer-consumer compatibility matrix.
 
 ## Quick smoke test
 
@@ -96,18 +110,31 @@ It also validates the policy-pair counts and authorization groups described in
 the paper. The smoke test checks the pipeline and semantic results; its timing
 values are not suitable for performance comparisons.
 
-## Reproduce the paper run
+## Reproduce the paper results
 
-The paper used an AMD Ryzen 9 5900 12-Core Processor and one pinned worker per
-logical CPU used by the experiment:
+First generate the exhaustive semantic and size corpus. Timing values from
+this command are not used in the paper's performance table, so one measured
+call per pair is sufficient:
 
 ```bash
-ITERATIONS=2000 \
-WARMUP=20 \
-JOBS=12 \
-PIN_WORKERS=1 \
+ITERATIONS=1 \
+WARMUP=0 \
+JOBS=1 \
 RESULTS_DIR="$PWD/benchmark-results" \
 benches/run_evaluation.sh
+```
+
+Then reproduce the controlled timing experiment on one logical CPU:
+
+```bash
+ITERATIONS=300 \
+WARMUP=20 \
+BATCHES=10 \
+SAMPLE_PER_STRATUM=20 \
+SELECTION_SEED=20260813 \
+PIN_CPU=0 \
+RESULTS_DIR="$PWD/benchmark-results" \
+benches/run_timing_batches.sh
 ```
 
 The canonical paper data are in `benchmark-results/`. The checked-in raw CSVs
@@ -116,11 +143,12 @@ policies and the sorted canonical ciphertext-right encoding. The report also
 supports older schemas and labels fields that were not recorded rather than
 inventing them.
 
-For uncontended single-core latency, use `JOBS=1` and leave
-`PIN_WORKERS=0`. Those results will not reproduce the paper's 12-worker
-execution environment.
+The crate and artifact use the `BUSL-1.1` license declared in `Cargo.toml`.
+On the paper's Ryzen 9 5900 host, allow roughly 25 minutes for the controlled
+timing command; the exhaustive one-call corpus and cross-version checks take a
+few minutes each. Runtime is machine dependent.
 
-The runner accepts these environment variables:
+The exhaustive-corpus runner accepts these environment variables:
 
 | Variable | Default | Meaning |
 | --- | ---: | --- |
@@ -130,14 +158,12 @@ The runner accepts these environment variables:
 | `PIN_WORKERS` | `0` | Set to `1` to pin worker `N` to logical CPU `N` |
 | `RESULTS_DIR` | `benchmark-results/` | Output directory, relative to the repository root by default |
 
-Use a quiet machine with a fixed performance policy when comparing latency.
-Record the current commit and avoid changing the source during the run. The
-generated summary records the OS, CPU, memory, Rust/Cargo versions, worker
-count, pinning status, current commit, and whether the working tree is dirty.
-The paper artifact is one fixed-order batch (Covercrypt first, LP-Covercrypt
-second), not an independently repeated latency study. Its timing percentages
-are descriptive observations without confidence intervals; use repeated runs
-with reversed order and `JOBS=1` before drawing performance conclusions.
+The timing runner accepts `ITERATIONS` (300), `WARMUP` (20), `BATCHES` (10),
+`SAMPLE_PER_STRATUM` (20), `SELECTION_SEED` (20260813), `PIN_CPU` (unset), and
+`RESULTS_DIR`. Set `PIN_CPU` to one CPU allowed by the host. Use a quiet machine
+with a fixed performance policy, and avoid changing the source during the run.
+The timing summary records the host, toolchain, commit, selection digest,
+pinning, order balance, and confidence-interval design.
 
 ## What the runner does
 
@@ -181,7 +207,7 @@ python3 -m json.tool benchmark-results/classic-summary.json
 python3 -m json.tool benchmark-results/hybridized-summary.json
 ```
 
-The summaries can be rebuilt from the stored raw rows without rerunning
+The exhaustive summaries can be rebuilt from stored raw rows without rerunning
 cryptography:
 
 ```bash
@@ -199,9 +225,63 @@ for scenario in classic hybridized; do
 done
 ```
 
-Latency is reported as mean nanoseconds in raw CSV rows and mean microseconds
-in the summary. Classic and Hybridized results must be interpreted separately;
-the report does not pool them.
+The controlled timing summary can likewise be rebuilt from its retained raw
+rows:
+
+```bash
+python3 benches/timing_report.py summarize \
+  --results-dir benchmark-results \
+  --pairs benchmark-results/timing-pairs.tsv \
+  --batches 10 --warmup 20 --selection-seed 20260813 --pin-cpu 0 \
+  --source-manifest benchmark-results/timing-source-manifest.json \
+  --batch-output benchmark-results/timing-batches.csv \
+  --output benchmark-results/timing-summary.json
+```
+
+Verify the archived reproduction sources and all retained timing results with
+these two invocations:
+
+```bash
+python3 benches/artifact_manifest.py verify \
+  --repo-root "$PWD" \
+  --manifest benchmark-results/timing-source-manifest.json
+python3 benches/artifact_manifest.py verify \
+  --repo-root "$PWD" \
+  --manifest benchmark-results/timing-artifact-manifest.json
+```
+
+The source manifest hashes `Cargo.toml`, `Cargo.lock`, every Rust library
+source, the shared benchmark, and all timing orchestration/report scripts. It
+identifies the archived source snapshot even when the recorded Git worktree was
+dirty. Because this manifest was generated after the retained timing run, it is
+a reproduction and audit snapshot, not a historical attestation that those
+exact script bytes created the raw CSVs. The result manifest binds that source
+manifest to the selection TSV, all 40 raw CSVs, batch aggregate, summary, and
+run log.
+
+Classic and Hybridized timing results are interpreted separately; no result
+pools the scenarios.
+
+The cross-build validation writes two additional top-level files:
+
+| File | Contents |
+| --- | --- |
+| `boolean-cross-build.json` | Fourteen focused v15/LP Boolean cases over 36 complete downward-closed keys |
+| `compatibility-matrix.json` | Eight Classic/Hybridized v15/LP producer-consumer rows for stateful and wire objects |
+
+The timing experiment also writes only top-level files in
+`benchmark-results/`: `timing-pairs.tsv`, forty
+`timing-bNN-<scenario>-<variant>.csv` raw files, `timing-batches.csv`,
+`timing-summary.json`, `timing-summary.stdout.json`, `timing-run.log`,
+`timing-source-manifest.json`, and `timing-artifact-manifest.json`.
+
+The Boolean report requires all 360 decisions in the ten shared-preservation
+cases to agree, while recording the repeated-hierarchy and incompatible-anarchy
+language changes separately. The compatibility report requires V1/V2
+AccessStructure, MSK, and MPK objects to reject cross-version loading, while
+USKs and PKE ciphertexts remain consumable in their original MSK domain. It
+also verifies that deserializing a legacy v15 omission-key under LP does not
+silently narrow its authority.
 
 ## Artifact files
 
@@ -211,6 +291,18 @@ the report does not pool them.
   execution driver;
 - [`benches/evaluation_report.py`](benches/evaluation_report.py): validation,
   merge, and aggregation logic;
+- [`benches/run_timing_batches.sh`](benches/run_timing_batches.sh): balanced,
+  single-worker replicated-batch timing driver;
+- [`benches/timing_report.py`](benches/timing_report.py): seeded sample
+  selection, raw-batch validation, and paired confidence intervals;
+- [`benches/artifact_manifest.py`](benches/artifact_manifest.py): exact-source
+  and timing-result checksum creation and verification;
+- [`examples/cross_version_validation.rs`](examples/cross_version_validation.rs):
+  common v15/LP Boolean and serialization test program;
+- [`benches/run_cross_version_validation.sh`](benches/run_cross_version_validation.sh):
+  clean cross-build and compatibility-matrix driver;
+- [`benches/cross_version_report.py`](benches/cross_version_report.py): strict
+  validator and aggregator for both cross-build reports;
 - [`benches/EVALUATION.md`](benches/EVALUATION.md): concise benchmark notes.
 
 If the baseline check fails, obtain repository history containing commit
