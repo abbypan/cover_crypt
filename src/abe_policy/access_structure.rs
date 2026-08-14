@@ -8,7 +8,7 @@ use crate::{
     Error,
 };
 
-use super::Version;
+use super::{dimension::validate_ordinary_name, Version};
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct AccessStructure {
@@ -50,6 +50,8 @@ impl AccessStructure {
     fn validate_serialized_invariants(&self) -> Result<(), Error> {
         let mut attribute_ids = HashSet::new();
         for (name, dimension) in &self.dimensions {
+            validate_ordinary_name(name)
+                .map_err(|error| Error::ConversionFailed(error.to_string()))?;
             dimension.validate_maximum().map_err(|error| {
                 Error::ConversionFailed(format!("invalid dimension '{name}': {error}"))
             })?;
@@ -73,6 +75,7 @@ impl AccessStructure {
     /// Only refreshed keys can decrypt for an access policy belonging to the
     /// semantic space of the new dimension.
     pub fn add_anarchy(&mut self, dimension: String) -> Result<(), Error> {
+        validate_ordinary_name(&dimension)?;
         let maximum_id = self.next_attribute_id()?;
         match self.dimensions.entry(dimension) {
             Entry::Occupied(e) => Err(Error::ExistingDimension(e.key().to_string())),
@@ -91,6 +94,7 @@ impl AccessStructure {
     /// Only refreshed keys can decrypt for an access policy belonging to the
     /// semantic space of the new dimension.
     pub fn add_hierarchy(&mut self, dimension: String) -> Result<(), Error> {
+        validate_ordinary_name(&dimension)?;
         let maximum_id = self.next_attribute_id()?;
         match self.dimensions.entry(dimension) {
             Entry::Occupied(e) => Err(Error::ExistingDimension(e.key().to_string())),
@@ -774,6 +778,40 @@ mod tests {
     }
 
     #[test]
+    fn test_mixed_broadcast_is_compiled_per_policy_path() -> Result<(), Error> {
+        let mut structure = AccessStructure::new();
+        gen_structure(&mut structure, false)?;
+
+        let term = AccessPolicy::parse("SEC::LOW")?;
+        let with_broadcast = AccessPolicy::parse("SEC::LOW || *")?;
+
+        assert_eq!(
+            structure.ap_to_enc_rights(&with_broadcast)?,
+            structure.ap_to_enc_rights(&AccessPolicy::parse("*")?)?
+        );
+        assert_eq!(
+            structure.ap_to_usk_rights(&with_broadcast)?,
+            structure.ap_to_usk_rights(&term)?
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_reserved_tokens_are_rejected_in_ordinary_names() -> Result<(), Error> {
+        let mut structure = AccessStructure::new();
+        assert!(structure.add_anarchy("D$".to_string()).is_err());
+        structure.add_anarchy("D".to_string())?;
+        assert!(structure
+            .add_attribute(
+                QualifiedAttribute::new("D", "A$B"),
+                EncryptionHint::Classic,
+                None,
+            )
+            .is_err());
+        Ok(())
+    }
+
+    #[test]
     fn test_invalid_anarchic_conjunction_is_rejected() -> Result<(), Error> {
         let mut structure = AccessStructure::new();
         gen_structure(&mut structure, false)?;
@@ -1084,17 +1122,29 @@ mod tests {
             ),
             (
                 "SEC::LOW || *".to_string(),
-                vec![ModelClause {
-                    sec: ModelSec::Bottom,
-                    dpt: ModelDpt::Bottom,
-                }],
+                vec![
+                    ModelClause {
+                        sec: ModelSec::Low,
+                        dpt: ModelDpt::Bottom,
+                    },
+                    ModelClause {
+                        sec: ModelSec::Bottom,
+                        dpt: ModelDpt::Bottom,
+                    },
+                ],
             ),
             (
                 "* || SEC::LOW".to_string(),
-                vec![ModelClause {
-                    sec: ModelSec::Bottom,
-                    dpt: ModelDpt::Bottom,
-                }],
+                vec![
+                    ModelClause {
+                        sec: ModelSec::Bottom,
+                        dpt: ModelDpt::Bottom,
+                    },
+                    ModelClause {
+                        sec: ModelSec::Low,
+                        dpt: ModelDpt::Bottom,
+                    },
+                ],
             ),
             (
                 "SEC::LOW && *".to_string(),

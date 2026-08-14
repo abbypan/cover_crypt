@@ -12,6 +12,20 @@ type Name = String;
 
 pub(crate) const MAX_ATTRIBUTE_NAME: &str = "$";
 
+pub(crate) fn validate_ordinary_name(name: &str) -> Result<(), Error> {
+    if name.is_empty()
+        || name.trim() != name
+        || ["&&", "||", "::", MAX_ATTRIBUTE_NAME, "(", ")", "*"]
+            .iter()
+            .any(|reserved| name.contains(reserved))
+    {
+        return Err(Error::OperationNotPermitted(format!(
+            "ordinary name '{name}' is empty, ambiguous, or contains a reserved token"
+        )));
+    }
+    Ok(())
+}
+
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 pub struct Attribute {
     pub(crate) id: usize,
@@ -123,6 +137,12 @@ impl Dimension {
                 )));
             }
         }
+        for name in self.get_attributes_name() {
+            if name != MAX_ATTRIBUTE_NAME {
+                validate_ordinary_name(name)
+                    .map_err(|error| Error::ConversionFailed(error.to_string()))?;
+            }
+        }
         Ok(())
     }
 
@@ -231,6 +251,7 @@ impl Dimension {
                 "the maximum attribute '{MAX_ATTRIBUTE_NAME}' is created automatically"
             )));
         }
+        validate_ordinary_name(&attribute)?;
         if after == Some(MAX_ATTRIBUTE_NAME) {
             return Err(Error::OperationNotPermitted(format!(
                 "no attribute can be ranked above the maximum attribute '{MAX_ATTRIBUTE_NAME}'"
@@ -377,6 +398,7 @@ impl Dimension {
                 "the maximum attribute name '{MAX_ATTRIBUTE_NAME}' is reserved"
             )));
         }
+        validate_ordinary_name(&new_name)?;
         match self {
             Self::Anarchy(attributes) => {
                 if attributes.contains_key(&new_name) {

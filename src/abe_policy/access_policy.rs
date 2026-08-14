@@ -26,7 +26,7 @@ impl AccessPolicy {
     /// given as a string.
     fn find_matching_closing_parenthesis(boolean_expression: &str) -> Result<usize, Error> {
         let mut count = 0;
-        for (index, c) in boolean_expression.chars().enumerate() {
+        for (index, c) in boolean_expression.char_indices() {
             match c {
                 '(' => count += 1,
                 ')' => count -= 1,
@@ -48,21 +48,22 @@ impl AccessPolicy {
     /// The following abstract grammar describes the valid access policies
     /// syntax. The brackets are used to denote optional elements, the pipes
     /// ('|') to denote options, slashes to denote REGEXP, and spaces to denote
-    /// concatenation. Spaces may be interleaved with elements. They are simply
-    /// ignored by the parser.
+    /// concatenation. Whitespace may surround operands and operators; whitespace
+    /// inside a dimension or component name is retained.
     ///
-    /// - access_policy: [ attribute | group [ operator access_policy ]]
+    /// - access_policy: operand [ operator access_policy ]
+    /// - operand: attribute | group | broadcast
     /// - attribute: dimension [ separator component ]
     /// - group: ( access_policy )
+    /// - broadcast: *
     /// - operator: OR | AND
     /// - OR: ||
     /// - AND: &&
     /// - separator: ::
-    /// - dimension: /[^&|: ]+/
-    /// - component: /[^&|: ]+/
+    /// - dimension: /[^()&|:]+/
+    /// - component: /[^()&|:]+/
     ///
-    /// The REGEXP used to describe the dimension and the component stands for:
-    /// "at least one character that is neither '&', '|', ':' nor ' '".
+    /// Leading and trailing spaces are trimmed; internal spaces are retained.
     ///
     /// # Precedence rule
     ///
@@ -76,7 +77,6 @@ impl AccessPolicy {
     /// The following expressions define valid access policies:
     ///
     /// - "DPT::MKG && (CTR::FR || CTR::DE)"
-    /// - ""
     /// - "SEC::Low Secret && CTR::FR"
     ///
     /// Notice that the arity of the operators is two. Therefore the following
@@ -91,25 +91,39 @@ impl AccessPolicy {
     pub fn parse(mut e: &str) -> Result<Self, Error> {
         let seeker = |c: &char| !"()|&".contains(*c);
         let mut q = LinkedList::<Self>::new();
+        let mut expect_operand = true;
         loop {
             e = e.trim();
 
             if e.is_empty() {
-                if let Some(first) = q.pop_front() {
+                if expect_operand {
+                    return Err(Error::InvalidBooleanExpression(
+                        "missing operand in access policy".to_string(),
+                    ));
+                } else if let Some(first) = q.pop_front() {
                     return Ok(Self::conjugate(first, q.into_iter()));
                 } else {
                     return Err(Error::InvalidBooleanExpression(
                         "empty string is not a valid access policy".to_string(),
                     ));
                 }
-            } else if e == "*" {
-                return Ok(Self::conjugate(Self::Broadcast, q.into_iter()));
             } else if e.starts_with('*') {
+                if !expect_operand {
+                    return Err(Error::InvalidBooleanExpression(format!(
+                        "missing operator before broadcast in '{e}'"
+                    )));
+                }
                 q.push_back(Self::Broadcast);
                 e = &e[1..];
+                expect_operand = false;
             } else {
-                match &e[..1] {
-                    "(" => {
+                match e.as_bytes()[0] {
+                    b'(' => {
+                        if !expect_operand {
+                            return Err(Error::InvalidBooleanExpression(format!(
+                                "missing operator before group in '{e}'"
+                            )));
+                        }
                         let offset = Self::find_matching_closing_parenthesis(&e[1..])?;
                         q.push_back(Self::parse(&e[1..1 + offset]).map_err(|err| {
                             Error::InvalidBooleanExpression(format!(
@@ -117,11 +131,17 @@ impl AccessPolicy {
                             ))
                         })?);
                         e = &e[2 + offset..];
+                        expect_operand = false;
                     }
-                    "|" => {
-                        if e[1..].is_empty() || &e[1..2] != "|" {
+                    b'|' => {
+                        if !e.starts_with("||") {
                             return Err(Error::InvalidBooleanExpression(format!(
                                 "invalid separator in: '{e}'"
+                            )));
+                        }
+                        if expect_operand {
+                            return Err(Error::InvalidBooleanExpression(format!(
+                                "leading OR operand in '{e}'"
                             )));
                         }
                         let base = q.pop_front().ok_or_else(|| {
@@ -130,28 +150,35 @@ impl AccessPolicy {
                         let lhs = Self::conjugate(base, q.into_iter());
                         return Ok(lhs | Self::parse(&e[2..])?);
                     }
-                    "&" => {
-                        if e[1..].is_empty() || &e[1..2] != "&" {
+                    b'&' => {
+                        if !e.starts_with("&&") {
                             return Err(Error::InvalidBooleanExpression(format!(
                                 "invalid leading separator in: '{e}'"
                             )));
                         }
-                        if q.is_empty() {
+                        if expect_operand {
                             return Err(Error::InvalidBooleanExpression(format!(
                                 "leading AND operand in '{e}'"
                             )));
                         }
                         e = &e[2..];
+                        expect_operand = true;
                     }
-                    ")" => {
+                    b')' => {
                         return Err(Error::InvalidBooleanExpression(format!(
                             "unmatched closing parenthesis in '{e}'"
                         )));
                     }
                     _ => {
+                        if !expect_operand {
+                            return Err(Error::InvalidBooleanExpression(format!(
+                                "missing operator before attribute in '{e}'"
+                            )));
+                        }
                         let attr: String = e.chars().take_while(seeker).collect();
                         q.push_back(Self::Term(QualifiedAttribute::try_from(attr.as_str())?));
                         e = &e[attr.len()..];
+                        expect_operand = false;
                     }
                 }
             }
@@ -195,13 +222,7 @@ impl BitAnd for AccessPolicy {
     type Output = Self;
 
     fn bitand(self, rhs: Self) -> Self::Output {
-        if self == Self::Broadcast {
-            rhs
-        } else if rhs == Self::Broadcast {
-            self
-        } else {
-            Self::Conjunction(Box::new(self), Box::new(rhs))
-        }
+        Self::Conjunction(Box::new(self), Box::new(rhs))
     }
 }
 
@@ -209,13 +230,7 @@ impl BitOr for AccessPolicy {
     type Output = Self;
 
     fn bitor(self, rhs: Self) -> Self::Output {
-        if self == Self::Broadcast {
-            self
-        } else if rhs == Self::Broadcast {
-            rhs
-        } else {
-            Self::Disjunction(Box::new(self), Box::new(rhs))
-        }
+        Self::Disjunction(Box::new(self), Box::new(rhs))
     }
 }
 
@@ -232,31 +247,33 @@ mod tests {
         println!("{ap:#?}");
         let ap = AccessPolicy::parse("D1::A && (D2::A || D2::B)").unwrap();
         println!("{ap:#?}");
-        let ap = AccessPolicy::parse("D1::A (D2::A || D2::B)").unwrap();
-        println!("{ap:#?}");
+        assert!(AccessPolicy::parse("部门::开发 && (级别::低 || 级别::高)").is_ok());
         assert_eq!(AccessPolicy::parse("*").unwrap(), AccessPolicy::Broadcast);
+        let term = AccessPolicy::parse("D1::A").unwrap();
         assert_eq!(
-            AccessPolicy::parse("D1::A || *").unwrap(),
-            AccessPolicy::Broadcast
+            AccessPolicy::parse("D1::A && *").unwrap().to_dnf(),
+            term.to_dnf()
         );
         assert_eq!(
-            AccessPolicy::parse("* || D1::A").unwrap(),
-            AccessPolicy::Broadcast
+            AccessPolicy::parse("* && D1::A").unwrap().to_dnf(),
+            term.to_dnf()
         );
-        assert_eq!(
-            AccessPolicy::parse("D1::A && *").unwrap(),
-            AccessPolicy::parse("D1::A").unwrap()
-        );
-        assert_eq!(
-            AccessPolicy::parse("* && D1::A").unwrap(),
-            AccessPolicy::parse("D1::A").unwrap()
-        );
+        assert!(AccessPolicy::parse("D1::A || *")
+            .unwrap()
+            .to_dnf()
+            .contains(&Vec::new()));
+        assert!(AccessPolicy::parse("* || D1::A")
+            .unwrap()
+            .to_dnf()
+            .contains(&Vec::new()));
         assert!(AccessPolicy::parse("").is_err());
 
         // These are invalid access policies.
         // TODO: make this one valid (change the parsing rule of the attribute).
         assert!(AccessPolicy::parse("D1").is_err());
+        assert!(AccessPolicy::parse("D1::A (D2::A || D2::B)").is_err());
         assert!(AccessPolicy::parse("D1::A (&& D2::A || D2::B)").is_err());
         assert!(AccessPolicy::parse("|| D2::B").is_err());
+        assert!(AccessPolicy::parse("D1::A &&").is_err());
     }
 }
