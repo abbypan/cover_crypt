@@ -799,15 +799,31 @@ mod tests {
     #[test]
     fn test_reserved_tokens_are_rejected_in_ordinary_names() -> Result<(), Error> {
         let mut structure = AccessStructure::new();
-        assert!(structure.add_anarchy("D$".to_string()).is_err());
+        for invalid_dimension in [
+            "$", "*", "D$", "D*", "D(", "D)", "D&&X", "D||X", "D::X", " D", "D ",
+        ] {
+            assert!(
+                structure
+                    .add_anarchy(invalid_dimension.to_string())
+                    .is_err(),
+                "{invalid_dimension}"
+            );
+        }
         structure.add_anarchy("D".to_string())?;
-        assert!(structure
-            .add_attribute(
-                QualifiedAttribute::new("D", "A$B"),
-                EncryptionHint::Classic,
-                None,
-            )
-            .is_err());
+        for invalid_attribute in [
+            "$", "*", "A$B", "A*B", "A(B", "A)B", "A&&B", "A||B", "A::B", " A", "A ",
+        ] {
+            assert!(
+                structure
+                    .add_attribute(
+                        QualifiedAttribute::new("D", invalid_attribute),
+                        EncryptionHint::Classic,
+                        None,
+                    )
+                    .is_err(),
+                "{invalid_attribute}"
+            );
+        }
         Ok(())
     }
 
