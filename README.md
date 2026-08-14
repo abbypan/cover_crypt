@@ -238,26 +238,48 @@ python3 benches/timing_report.py summarize \
   --output benchmark-results/timing-summary.json
 ```
 
-Verify the archived reproduction sources and all retained timing results with
-these two invocations:
+Verify all retained timing files, including the source-manifest file, with:
 
 ```bash
-python3 benches/artifact_manifest.py verify \
-  --repo-root "$PWD" \
-  --manifest benchmark-results/timing-source-manifest.json
 python3 benches/artifact_manifest.py verify \
   --repo-root "$PWD" \
   --manifest benchmark-results/timing-artifact-manifest.json
 ```
 
 The source manifest hashes `Cargo.toml`, `Cargo.lock`, every Rust library
-source, the shared benchmark, and all timing orchestration/report scripts. It
-identifies the archived source snapshot even when the recorded Git worktree was
-dirty. Because this manifest was generated after the retained timing run, it is
-a reproduction and audit snapshot, not a historical attestation that those
-exact script bytes created the raw CSVs. The result manifest binds that source
-manifest to the selection TSV, all 40 raw CSVs, batch aggregate, summary, and
-run log.
+source, the shared benchmark, and all timing orchestration/report scripts. Its
+34 tracked files equal commit `4471592`; the artifact supplies the separately
+hashed, untracked `Cargo.lock`. Verify that snapshot in an isolated worktree:
+
+```bash
+timing_parent="$(mktemp -d)"
+timing_tree="$timing_parent/source"
+git worktree add --detach "$timing_tree" 4471592
+cp Cargo.lock "$timing_tree/Cargo.lock"
+python3 "$timing_tree/benches/artifact_manifest.py" verify \
+  --repo-root "$timing_tree" \
+  --manifest "$timing_tree/benchmark-results/timing-source-manifest.json"
+git worktree remove "$timing_tree"
+rmdir "$timing_parent"
+```
+
+Do not run the source-manifest check against the current development tree:
+later parser, mixed-broadcast, and name-validation changes intentionally make
+that check fail. The manifest was also generated after the retained timing run;
+it is a reproduction and audit snapshot, not historical proof that those exact
+bytes created the raw CSVs. The result manifest binds the snapshot to the
+selection TSV, all 40 raw CSVs, batch aggregate, summary, and run log.
+
+Artifact revisions are intentionally reported per result class rather than as
+one clean-revision run:
+
+| Result class | LP provenance |
+| --- | --- |
+| 79 x 79 corpus, authorization, and size | Clean run recorded at `39db9cb` |
+| Compiler scaling CSV | Archived at `103a739`; no separate run-time revision attestation |
+| Controlled timing | Run recorded at dirty HEAD `103a739`; post-run source snapshot matches tracked files at `4471592` plus the archived `Cargo.lock` |
+| Boolean differential and compatibility matrix | Data and generators archived at `4471592` |
+| 144-policy unit validation | Clean source commit `af288f9` |
 
 Classic and Hybridized timing results are interpreted separately; no result
 pools the scenarios.
