@@ -58,6 +58,11 @@ def source_files(repo: Path) -> list[Path]:
 def create_source(args: argparse.Namespace) -> None:
     repo = args.repo_root.resolve()
     paths = source_files(repo)
+    baseline_commit = (
+        git_output(repo, "rev-parse", f"{args.baseline_ref}^{{commit}}")
+        if args.baseline_ref
+        else None
+    )
     manifest = {
         "schema": "lp-covercrypt-timing-source-v1",
         "purpose": (
@@ -66,6 +71,7 @@ def create_source(args: argparse.Namespace) -> None:
         ),
         "git_head": git_output(repo, "rev-parse", "HEAD"),
         "git_worktree_dirty": bool(git_output(repo, "status", "--porcelain")),
+        "baseline_git_commit": baseline_commit,
         "files": [file_entry(repo, path) for path in paths],
     }
     write_json(args.output, manifest)
@@ -130,6 +136,7 @@ def main() -> None:
 
     source = subparsers.add_parser("source")
     source.add_argument("--repo-root", type=Path, required=True)
+    source.add_argument("--baseline-ref")
     source.add_argument("--output", type=Path, required=True)
     source.set_defaults(func=create_source)
 

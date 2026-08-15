@@ -36,6 +36,7 @@ source_manifest="$results_dir/timing-source-manifest.json"
 # outputs as source-tree dirtiness.
 python3 "$repo_dir/benches/artifact_manifest.py" source \
     --repo-root "$repo_dir" \
+    --baseline-ref "$baseline_ref" \
     --output "$source_manifest"
 : > "$results_dir/timing-run.log"
 python3 "$repo_dir/benches/timing_report.py" select \
@@ -47,12 +48,15 @@ python3 "$repo_dir/benches/timing_report.py" select \
 echo "Preparing original Covercrypt at $baseline_ref"
 git -C "$repo_dir" archive "$baseline_ref" | tar -x -C "$baseline_dir"
 cp "$repo_dir/examples/evaluation_benchmark.rs" "$baseline_dir/examples/evaluation_benchmark.rs"
+# The historical baseline did not track a lockfile.  Use the same tracked lock
+# as the LP build so both binaries have an exact, shared dependency resolution.
+cp "$repo_dir/Cargo.lock" "$baseline_dir/Cargo.lock"
 
 echo "Building both release binaries"
-cargo build --quiet --offline --release \
+cargo build --quiet --offline --locked --release \
     --manifest-path "$baseline_dir/Cargo.toml" \
     --example evaluation_benchmark
-cargo build --quiet --offline --release \
+cargo build --quiet --offline --locked --release \
     --manifest-path "$repo_dir/Cargo.toml" \
     --example evaluation_benchmark
 
