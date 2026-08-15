@@ -1,8 +1,9 @@
 {
   "schema": "lp-covercrypt-timing-source-v1",
-  "purpose": "Archived source snapshot for reproducing and auditing the canonical timing artifact; not a historical run-provenance attestation",
-  "git_head": "103a739e5f0ac4b81a18f44f6faf1afdfab1a55d",
-  "git_worktree_dirty": true,
+  "purpose": "Source snapshot captured before the timing runner modifies canonical result files; binds the run to its implementation and tool inputs",
+  "git_head": "1f750c4840668ed0a8fc418a0dcc6afb8464c243",
+  "git_worktree_dirty": false,
+  "baseline_git_commit": "089a548d4373dd099a57bb1c5219ad0a4cf25fe4",
   "files": [
     {
       "path": "Cargo.lock",
@@ -16,18 +17,18 @@
     },
     {
       "path": "benches/artifact_manifest.py",
-      "bytes": 5039,
-      "sha256": "b3891f95c02f4d2df8cff17537bf4957e52f9a448b2efe8289984bfe4ae421f6"
+      "bytes": 5285,
+      "sha256": "bee67c81c73c8289814eb12bff7bbeb8ce000cf25755309db894084fa7e0fa43"
     },
     {
       "path": "benches/run_timing_batches.sh",
-      "bytes": 3942,
-      "sha256": "4c7960900d76a95c335528e7c9667ae020474a73a2a66aaeb629838e641b421d"
+      "bytes": 4393,
+      "sha256": "37cd4af9096832cb88fb011e22330eb9da7830b5a04437ebd49f73ebe2911fb7"
     },
     {
       "path": "benches/timing_report.py",
-      "bytes": 14180,
-      "sha256": "1dbb63edf45af4f0cc5d2d9a9462afdc39507c62c6410e0c4816b07355f3eb23"
+      "bytes": 14722,
+      "sha256": "2ae1184502b67b5316197f174c8f7ffaeec3746705d4133dc3df39e1089eaacc"
     },
     {
       "path": "examples/evaluation_benchmark.rs",
@@ -36,13 +37,13 @@
     },
     {
       "path": "src/abe_policy/access_policy.rs",
-      "bytes": 9712,
-      "sha256": "4d95fceae26347367ce4b300907a181e35cf15b17879fe2ffa745ed2d64433b2"
+      "bytes": 10875,
+      "sha256": "65366ddb6f905795049e84559b2d5b688b4efa1a3340e551c370fe99ca9fa73b"
     },
     {
       "path": "src/abe_policy/access_structure.rs",
-      "bytes": 42650,
-      "sha256": "d134ab11ebaba4c458c4191d1ceb54a71fcf36e003b1d64b9d3001ff533e4f86"
+      "bytes": 44962,
+      "sha256": "3def67c05671ef2c560f36b3d631efbbf1fe08afab0b556a0e3e5a2aaeacd9c5"
     },
     {
       "path": "src/abe_policy/attribute.rs",
@@ -51,8 +52,8 @@
     },
     {
       "path": "src/abe_policy/dimension.rs",
-      "bytes": 21101,
-      "sha256": "689d4c1ff419d34c10db9ead35d6f9a6ec9a3031bd93c0dba925b1889fbca1c0"
+      "bytes": 21882,
+      "sha256": "615caf0dd019ec04487aaa73ec68b61c929c000d9db32024ba930571f0a67fe8"
     },
     {
       "path": "src/abe_policy/mod.rs",

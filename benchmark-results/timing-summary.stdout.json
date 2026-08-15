@@ -18,172 +18,173 @@
     "selection_sha256": "b22487abdea4da105204597b8f5984aefda63ff82e4cb8a4c33f3ff07e5fb161",
     "selection_seed": 20260813,
     "source_manifest": "timing-source-manifest.json",
-    "source_manifest_sha256": "a89d820cd53382d0a38d272c22db3dff71a6522031240fa34db430aaca80a4e1",
+    "source_manifest_sha256": "cb5fa76b6a4e29b27cb47d3918ad97f43919ee300da6472ce2ff80c9d35937a3",
     "cpu_pinned": true,
-    "pinned_cpu": 0
+    "pinned_cpu": 0,
+    "source_state_captured_before_results": true
   },
   "results": {
     "classic": {
       "same_success": {
         "sampled_pairs": 20,
-        "covercrypt_us_mean_of_batches": 809.3,
-        "lp_us_mean_of_batches": 765.16,
+        "covercrypt_us_mean_of_batches": 557.67,
+        "lp_us_mean_of_batches": 567.42,
         "paired_reduction_percent": {
-          "mean": 0.29,
-          "ci95_low": -12.03,
-          "ci95_high": 12.6
+          "mean": -1.77,
+          "ci95_low": -5.57,
+          "ci95_high": 2.03
         },
         "reduction_by_first_variant": {
-          "covercrypt": -0.91,
-          "lp-covercrypt": 1.49
+          "covercrypt": -0.45,
+          "lp-covercrypt": -3.09
         }
       },
       "same_failure": {
         "sampled_pairs": 20,
-        "covercrypt_us_mean_of_batches": 872.82,
-        "lp_us_mean_of_batches": 853.93,
+        "covercrypt_us_mean_of_batches": 614.17,
+        "lp_us_mean_of_batches": 626.51,
         "paired_reduction_percent": {
-          "mean": -0.43,
-          "ci95_low": -7.93,
-          "ci95_high": 7.07
+          "mean": -2.06,
+          "ci95_low": -5.75,
+          "ci95_high": 1.63
         },
         "reduction_by_first_variant": {
-          "covercrypt": 0.75,
-          "lp-covercrypt": -1.62
+          "covercrypt": -1.65,
+          "lp-covercrypt": -2.46
         }
       },
       "diff_tp_tp": {
         "sampled_pairs": 20,
-        "covercrypt_us_mean_of_batches": 1148.62,
-        "lp_us_mean_of_batches": 378.92,
+        "covercrypt_us_mean_of_batches": 811.05,
+        "lp_us_mean_of_batches": 270.41,
         "paired_reduction_percent": {
-          "mean": 65.59,
-          "ci95_low": 60.56,
-          "ci95_high": 70.62
+          "mean": 66.63,
+          "ci95_low": 65.17,
+          "ci95_high": 68.09
         },
         "reduction_by_first_variant": {
-          "covercrypt": 65.27,
-          "lp-covercrypt": 65.91
+          "covercrypt": 66.76,
+          "lp-covercrypt": 66.5
         },
         "control_adjusted_reduction_percent": {
-          "mean": 65.55,
-          "ci95_low": 64.16,
-          "ci95_high": 66.94
+          "mean": 67.22,
+          "ci95_low": 66.76,
+          "ci95_high": 67.68
         }
       },
       "diff_tn_tn": {
         "sampled_pairs": 20,
-        "covercrypt_us_mean_of_batches": 1288.12,
-        "lp_us_mean_of_batches": 301.14,
+        "covercrypt_us_mean_of_batches": 905.18,
+        "lp_us_mean_of_batches": 220.64,
         "paired_reduction_percent": {
-          "mean": 76.43,
-          "ci95_low": 75.66,
-          "ci95_high": 77.19
+          "mean": 75.61,
+          "ci95_low": 74.76,
+          "ci95_high": 76.47
         },
         "reduction_by_first_variant": {
-          "covercrypt": 76.85,
-          "lp-covercrypt": 76.0
+          "covercrypt": 75.76,
+          "lp-covercrypt": 75.46
         },
         "control_adjusted_reduction_percent": {
-          "mean": 76.32,
-          "ci95_low": 74.59,
-          "ci95_high": 78.05
+          "mean": 76.1,
+          "ci95_low": 75.95,
+          "ci95_high": 76.25
         }
       },
       "diff_tn_fp": {
         "sampled_pairs": 20,
-        "covercrypt_us_mean_of_batches": 1093.81,
-        "lp_us_mean_of_batches": 376.37,
+        "covercrypt_us_mean_of_batches": 758.3,
+        "lp_us_mean_of_batches": 278.1,
         "paired_reduction_percent": {
-          "mean": 64.84,
-          "ci95_low": 62.69,
-          "ci95_high": 67.0
+          "mean": 63.31,
+          "ci95_low": 61.93,
+          "ci95_high": 64.69
         },
         "reduction_by_first_variant": {
-          "covercrypt": 64.79,
-          "lp-covercrypt": 64.9
+          "covercrypt": 63.19,
+          "lp-covercrypt": 63.43
         }
       }
     },
     "hybridized": {
       "same_success": {
         "sampled_pairs": 20,
-        "covercrypt_us_mean_of_batches": 1459.57,
-        "lp_us_mean_of_batches": 1567.17,
+        "covercrypt_us_mean_of_batches": 1018.83,
+        "lp_us_mean_of_batches": 1032.98,
         "paired_reduction_percent": {
-          "mean": -8.73,
-          "ci95_low": -23.11,
-          "ci95_high": 5.66
+          "mean": -1.42,
+          "ci95_low": -3.17,
+          "ci95_high": 0.34
         },
         "reduction_by_first_variant": {
-          "covercrypt": -1.7,
-          "lp-covercrypt": -15.75
+          "covercrypt": -1.55,
+          "lp-covercrypt": -1.29
         }
       },
       "same_failure": {
         "sampled_pairs": 20,
-        "covercrypt_us_mean_of_batches": 1658.81,
-        "lp_us_mean_of_batches": 1733.12,
+        "covercrypt_us_mean_of_batches": 1161.15,
+        "lp_us_mean_of_batches": 1168.86,
         "paired_reduction_percent": {
-          "mean": -8.45,
-          "ci95_low": -21.21,
-          "ci95_high": 4.3
+          "mean": -0.68,
+          "ci95_low": -2.52,
+          "ci95_high": 1.16
         },
         "reduction_by_first_variant": {
-          "covercrypt": -11.21,
-          "lp-covercrypt": -5.7
+          "covercrypt": -0.03,
+          "lp-covercrypt": -1.33
         }
       },
       "diff_tp_tp": {
         "sampled_pairs": 20,
-        "covercrypt_us_mean_of_batches": 2157.46,
-        "lp_us_mean_of_batches": 613.38,
+        "covercrypt_us_mean_of_batches": 1542.11,
+        "lp_us_mean_of_batches": 414.22,
         "paired_reduction_percent": {
-          "mean": 70.96,
-          "ci95_low": 66.99,
-          "ci95_high": 74.92
+          "mean": 73.13,
+          "ci95_low": 72.39,
+          "ci95_high": 73.86
         },
         "reduction_by_first_variant": {
-          "covercrypt": 72.21,
-          "lp-covercrypt": 69.7
+          "covercrypt": 73.17,
+          "lp-covercrypt": 73.08
         },
         "control_adjusted_reduction_percent": {
-          "mean": 73.27,
-          "ci95_low": 72.23,
-          "ci95_high": 74.32
+          "mean": 73.51,
+          "ci95_low": 73.08,
+          "ci95_high": 73.93
         }
       },
       "diff_tn_tn": {
         "sampled_pairs": 20,
-        "covercrypt_us_mean_of_batches": 2518.37,
-        "lp_us_mean_of_batches": 475.79,
+        "covercrypt_us_mean_of_batches": 1772.51,
+        "lp_us_mean_of_batches": 333.68,
         "paired_reduction_percent": {
-          "mean": 80.45,
-          "ci95_low": 77.9,
-          "ci95_high": 82.99
+          "mean": 81.17,
+          "ci95_low": 80.79,
+          "ci95_high": 81.55
         },
         "reduction_by_first_variant": {
-          "covercrypt": 80.16,
-          "lp-covercrypt": 80.73
+          "covercrypt": 81.33,
+          "lp-covercrypt": 81.02
         },
         "control_adjusted_reduction_percent": {
-          "mean": 81.98,
-          "ci95_low": 80.95,
-          "ci95_high": 83.02
+          "mean": 81.3,
+          "ci95_low": 81.24,
+          "ci95_high": 81.36
         }
       },
       "diff_tn_fp": {
         "sampled_pairs": 20,
-        "covercrypt_us_mean_of_batches": 2019.53,
-        "lp_us_mean_of_batches": 677.58,
+        "covercrypt_us_mean_of_batches": 1455.16,
+        "lp_us_mean_of_batches": 448.31,
         "paired_reduction_percent": {
-          "mean": 65.82,
-          "ci95_low": 61.22,
-          "ci95_high": 70.43
+          "mean": 69.18,
+          "ci95_low": 68.54,
+          "ci95_high": 69.83
         },
         "reduction_by_first_variant": {
-          "covercrypt": 64.32,
-          "lp-covercrypt": 67.33
+          "covercrypt": 69.65,
+          "lp-covercrypt": 68.72
         }
       }
     }
@@ -193,7 +194,7 @@
     "cpu": "AMD Ryzen 9 5900 12-Core Processor",
     "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14) (Arch Linux rust 1:1.97.1-1)",
     "cargo": "cargo 1.97.1 (c980f4866 2026-06-30) (Arch Linux rust 1:1.97.1-1)",
-    "lp_git_head": "103a739e5f0ac4b81a18f44f6faf1afdfab1a55d",
-    "lp_worktree_dirty": true
+    "lp_git_head": "1f750c4840668ed0a8fc418a0dcc6afb8464c243",
+    "lp_worktree_dirty": false
   }
 }

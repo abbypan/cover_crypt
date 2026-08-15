@@ -105,6 +105,11 @@ ITERATIONS=300 WARMUP=20 BATCHES=10 SAMPLE_PER_STRATUM=20 \
   RESULTS_DIR="$PWD/benchmark-results" benches/run_timing_batches.sh
 ```
 
+For attested paper data, run the timing driver from a clean tracked source
+state. Before writing a result file, it records that state and the full baseline
+commit. It then supplies both temporary-baseline and LP builds with the same
+tracked `Cargo.lock` and invokes Cargo with `--offline --locked`.
+
 From the exhaustive Classic classification, a fixed seed selects 20 pairs from
 each of `same_success`, `same_failure`, `diff_tp_tp`, `diff_tn_tn`, and
 `diff_tn_fp`. The identical 100-pair selection is used in both scenarios and
@@ -144,9 +149,9 @@ Generated files:
 - `timing-batches.csv` and `timing-summary.json`: paired batch observations and
   confidence-interval aggregates;
 - `timing-source-manifest.json` and `timing-artifact-manifest.json`: SHA-256
-  checksums for the archived reproduction sources and every canonical timing
-  result; the source manifest is a post-run snapshot, not historical execution
-  provenance;
+  checksums for the exact timing sources and every canonical timing result; the
+  source manifest is captured before result writes and records both revisions
+  and the LP worktree state;
 - `boolean-cross-build.json`: shared-domain authorization comparison and
   explicitly classified language changes;
 - `key-rights-cross-build.json`: exact encoded-set comparisons for all 79

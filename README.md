@@ -57,9 +57,10 @@ The Git object for the baseline commit must exist locally:
 git rev-parse --verify '089a548^{commit}'
 ```
 
-Cargo may need network access on the first run to download dependencies. The
-runner creates an isolated temporary checkout for the baseline and removes it
-when the run finishes.
+Run `cargo fetch --locked` once if the locked dependencies are not cached. The
+timing runner itself builds offline and locked. It creates an isolated temporary
+checkout for the baseline, supplies both builds with the repository's tracked
+`Cargo.lock`, and removes the checkout when the run finishes.
 
 ## Validate Boolean-policy semantics
 
@@ -164,8 +165,10 @@ The timing runner accepts `ITERATIONS` (300), `WARMUP` (20), `BATCHES` (10),
 `SAMPLE_PER_STRATUM` (20), `SELECTION_SEED` (20260813), `PIN_CPU` (unset), and
 `RESULTS_DIR`. Set `PIN_CPU` to one CPU allowed by the host. Use a quiet machine
 with a fixed performance policy, and avoid changing the source during the run.
-The timing summary records the host, toolchain, commit, selection digest,
-pinning, order balance, and confidence-interval design.
+The timing summary records the host, toolchain, clean LP commit, selection
+digest, pinning, order balance, and confidence-interval design. Its pre-run
+source manifest also records the full baseline commit and hashes the common
+tracked lockfile used by both builds.
 
 ## What the runner does
 
@@ -248,29 +251,29 @@ python3 benches/artifact_manifest.py verify \
   --manifest benchmark-results/timing-artifact-manifest.json
 ```
 
-The source manifest hashes `Cargo.toml`, `Cargo.lock`, every Rust library
-source, the shared benchmark, and all timing orchestration/report scripts. Its
-34 tracked files equal commit `4471592`; the artifact supplies the separately
-hashed, untracked `Cargo.lock`. Verify that snapshot in an isolated worktree:
+The source manifest is created before the runner modifies any canonical result.
+It records clean LP commit `1f750c4`, full baseline commit
+`089a548d4373dd099a57bb1c5219ad0a4cf25fe4`, and hashes 35 tracked inputs:
+`Cargo.toml`, `Cargo.lock`, every Rust library source, the shared benchmark, and
+all timing orchestration/report scripts. Verify that source snapshot in an
+isolated worktree:
 
 ```bash
 timing_parent="$(mktemp -d)"
 timing_tree="$timing_parent/source"
-git worktree add --detach "$timing_tree" 4471592
-cp Cargo.lock "$timing_tree/Cargo.lock"
+source_manifest="$PWD/benchmark-results/timing-source-manifest.json"
+git worktree add --detach "$timing_tree" 1f750c4
 python3 "$timing_tree/benches/artifact_manifest.py" verify \
   --repo-root "$timing_tree" \
-  --manifest "$timing_tree/benchmark-results/timing-source-manifest.json"
+  --manifest "$source_manifest"
 git worktree remove "$timing_tree"
 rmdir "$timing_parent"
 ```
 
-Do not run the source-manifest check against the current development tree:
-later parser, mixed-broadcast, and name-validation changes intentionally make
-that check fail. The manifest was also generated after the retained timing run;
-it is a reproduction and audit snapshot, not historical proof that those exact
-bytes created the raw CSVs. The result manifest binds the snapshot to the
-selection TSV, all 40 raw CSVs, batch aggregate, summary, and run log.
+The result manifest transitively binds that pre-run snapshot to the selection
+TSV, all 40 raw CSVs, batch aggregate, summary, run log, and exact reporting
+scripts. The two manifest-verification commands above currently validate 50
+result files and 35 source inputs, respectively.
 
 Artifact revisions are intentionally reported per result class rather than as
 one clean-revision run:
@@ -279,7 +282,7 @@ one clean-revision run:
 | --- | --- |
 | 79 x 79 corpus, authorization, and size | Clean run recorded at `39db9cb` |
 | Compiler scaling CSV | Archived at `103a739`; no separate run-time revision attestation |
-| Controlled timing | Run recorded at dirty HEAD `103a739`; post-run source snapshot matches tracked files at `4471592` plus the archived `Cargo.lock` |
+| Controlled timing | Clean LP run at `1f750c4` against baseline `089a548`, with one tracked lockfile supplied to both offline locked builds |
 | Boolean differential and compatibility matrix | Data and generators archived at `4471592` |
 | 79-key encoded-right-set validation | Output records both revisions, LP-library worktree status, and SHA-256 hashes of both generators |
 | 144-policy unit validation | Clean source commit `af288f9` |
