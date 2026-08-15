@@ -5,9 +5,15 @@ repo_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 baseline_ref=089a548
 results_dir=${RESULTS_DIR:-"$repo_dir/benchmark-results"}
 lp_ref=$(git -C "$repo_dir" rev-parse HEAD)
-lp_library_dirty=false
-if ! git -C "$repo_dir" diff --quiet HEAD -- Cargo.toml Cargo.lock src; then
-    lp_library_dirty=true
+expected_lp_head=${EXPECTED_LP_HEAD:-$lp_ref}
+if [[ "$lp_ref" != "$expected_lp_head" ]]; then
+    echo "LP HEAD changed: expected $expected_lp_head, found $lp_ref" >&2
+    exit 2
+fi
+if [[ -n $(git -C "$repo_dir" status --porcelain --untracked-files=all -- \
+    . ':(exclude)benchmark-results/**') ]]; then
+    echo "cross-version validation requires a clean LP source worktree" >&2
+    exit 2
 fi
 baseline_dir=$(mktemp -d)
 work_dir=$(mktemp -d)
@@ -17,10 +23,11 @@ mkdir -p "$results_dir"
 git -C "$repo_dir" archive "$baseline_ref" | tar -x -C "$baseline_dir"
 cp "$repo_dir/examples/cross_version_validation.rs" \
     "$baseline_dir/examples/cross_version_validation.rs"
+cp "$repo_dir/Cargo.lock" "$baseline_dir/Cargo.lock"
 
-cargo build --release --manifest-path "$baseline_dir/Cargo.toml" \
+cargo build --offline --locked --release --manifest-path "$baseline_dir/Cargo.toml" \
     --example cross_version_validation
-cargo build --release --manifest-path "$repo_dir/Cargo.toml" \
+cargo build --offline --locked --release --manifest-path "$repo_dir/Cargo.toml" \
     --example cross_version_validation
 
 baseline_bin="$baseline_dir/target/release/examples/cross_version_validation"
@@ -63,7 +70,7 @@ python3 "$repo_dir/benches/cross_version_report.py" \
     --lp-key-rights "$work_dir/key-rights-lp-covercrypt.json" \
     --rust-generator "$repo_dir/examples/cross_version_validation.rs" \
     --lp-ref "$lp_ref" \
-    --lp-library-dirty "$lp_library_dirty" \
+    --lp-worktree-dirty false \
     --compatibility "${compatibility_outputs[@]}" \
     --boolean-output "$results_dir/boolean-cross-build.json" \
     --key-rights-output "$results_dir/key-rights-cross-build.json" \

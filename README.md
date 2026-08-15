@@ -4,12 +4,12 @@ This repository contains the benchmark artifact used in the LP-Covercrypt
 paper. The benchmark compares:
 
 - the released Covercrypt v15 baseline at commit `089a548`; and
-- LP-Covercrypt from the current working tree.
+- LP-Covercrypt from one final clean source commit shared by every experiment.
 
 The same benchmark source is compiled against both implementations. The runner
 measures authorization outcomes, compiled user rights, serialized user-key and
-ciphertext sizes, and decryption latency. It does not run the Criterion
-microbenchmarks in `benches/benches.rs`.
+PKE ciphertext sizes, and end-to-end PKE decryption latency. It does not run
+the Criterion microbenchmarks in `benches/benches.rs`.
 
 ## Experiment design
 
@@ -58,14 +58,16 @@ git rev-parse --verify '089a548^{commit}'
 ```
 
 Run `cargo fetch --locked` once if the locked dependencies are not cached. The
-timing runner itself builds offline and locked. It creates an isolated temporary
-checkout for the baseline, supplies both builds with the repository's tracked
-`Cargo.lock`, and removes the checkout when the run finishes.
+canonical runners build offline and locked. They create isolated temporary
+checkouts for the baseline, supply both builds with the repository's tracked
+`Cargo.lock`, and remove the checkouts when the run finishes.
 
 ## Validate Boolean-policy semantics
 
-Run the compiler-independent small-model and scaling checks before the timed
-benchmark:
+The unified runner below invokes the complete default test suite, scaling, and
+cross-build checks. The following commands remain useful as diagnostics, but
+their outputs must not be mixed into the canonical artifact when run from a
+different revision:
 
 ```bash
 cargo test test_exhaustive_small_model_semantics_144_policies
@@ -115,32 +117,27 @@ values are not suitable for performance comparisons.
 
 ## Reproduce the paper results
 
-First generate the exhaustive semantic and size corpus. Timing values from
-this command are not used in the paper's performance table, so one measured
-call per pair is sufficient:
+Start from a clean tracked source state and run every paper experiment through
+the unified entry point:
 
 ```bash
-ITERATIONS=1 \
-WARMUP=0 \
-JOBS=1 \
-RESULTS_DIR="$PWD/benchmark-results" \
-benches/run_evaluation.sh
+benches/run_all_evaluation.sh
 ```
 
-Then reproduce the controlled timing experiment on one logical CPU:
+The driver fixes the source HEAD before the first command, rejects source-tree
+changes or a HEAD change between stages, and writes every result directly into
+the flat `benchmark-results/` directory. It runs all default tests, compiler
+scaling, Boolean/key-right/migration cross-build validation, the exhaustive
+Classic/Hybridized corpus, and controlled timing. The final
+`evaluation-artifact-manifest.json` rejects the run unless every result class
+records that same clean LP source revision.
 
-```bash
-ITERATIONS=300 \
-WARMUP=20 \
-BATCHES=10 \
-SAMPLE_PER_STRATUM=20 \
-SELECTION_SEED=20260813 \
-PIN_CPU=0 \
-RESULTS_DIR="$PWD/benchmark-results" \
-benches/run_timing_batches.sh
-```
+Commit all source and runner changes before invoking the driver. Because the
+generated files themselves record the tested source commit, they may then be
+archived in a results-only commit; that archival commit is not a second tested
+revision.
 
-The canonical paper data are in `benchmark-results/`. The checked-in raw CSVs
+The canonical paper data are in `benchmark-results/`. The tracked raw CSVs
 use the current schema: they retain both the source and exact implementation
 policies and the sorted canonical ciphertext-right encoding. The report also
 supports older schemas and labels fields that were not recorded rather than
@@ -151,7 +148,11 @@ On the paper's Ryzen 9 5900 host, allow roughly 25 minutes for the controlled
 timing command; the exhaustive one-call corpus and cross-version checks take a
 few minutes each. Runtime is machine dependent.
 
-The exhaustive-corpus runner accepts these environment variables:
+The unified runner uses one measured call for the non-performance corpus, 12
+CPU-pinned corpus workers, and the controlled timing parameters reported in the
+paper. Its `FULL_*` and `TIMING_*` environment variables may be changed for
+diagnostics, but doing so changes the canonical experimental design. The
+standalone exhaustive-corpus runner accepts these environment variables:
 
 | Variable | Default | Meaning |
 | --- | ---: | --- |
@@ -161,7 +162,7 @@ The exhaustive-corpus runner accepts these environment variables:
 | `PIN_WORKERS` | `0` | Set to `1` to pin worker `N` to logical CPU `N` |
 | `RESULTS_DIR` | `benchmark-results/` | Output directory, relative to the repository root by default |
 
-The timing runner accepts `ITERATIONS` (300), `WARMUP` (20), `BATCHES` (10),
+The standalone timing runner accepts `ITERATIONS` (300), `WARMUP` (20), `BATCHES` (10),
 `SAMPLE_PER_STRATUM` (20), `SELECTION_SEED` (20260813), `PIN_CPU` (unset), and
 `RESULTS_DIR`. Set `PIN_CPU` to one CPU allowed by the host. Use a quiet machine
 with a fixed performance policy, and avoid changing the source during the run.
@@ -251,41 +252,22 @@ python3 benches/artifact_manifest.py verify \
   --manifest benchmark-results/timing-artifact-manifest.json
 ```
 
-The source manifest is created before the runner modifies any canonical result.
-It records clean LP commit `1f750c4`, full baseline commit
-`089a548d4373dd099a57bb1c5219ad0a4cf25fe4`, and hashes 35 tracked inputs:
-`Cargo.toml`, `Cargo.lock`, every Rust library source, the shared benchmark, and
-all timing orchestration/report scripts. Verify that source snapshot in an
-isolated worktree:
+The timing source manifest is created before the timing stage writes canonical
+timing results. It records the same clean LP source commit as every earlier
+stage, the full baseline commit, and hashes the tracked implementation and all
+evaluation inputs. The timing result manifest binds that snapshot to the
+selection TSV, all 40 raw CSVs, batch aggregate, summary, and run log.
+
+The unified `evaluation-artifact-manifest.json` additionally hashes the unit,
+scaling, cross-build, exhaustive-corpus, migration, and timing outputs. Its
+`all_result_classes_same_clean_revision` field is emitted only after every
+embedded revision and worktree-state check succeeds. Verify it with:
 
 ```bash
-timing_parent="$(mktemp -d)"
-timing_tree="$timing_parent/source"
-source_manifest="$PWD/benchmark-results/timing-source-manifest.json"
-git worktree add --detach "$timing_tree" 1f750c4
-python3 "$timing_tree/benches/artifact_manifest.py" verify \
-  --repo-root "$timing_tree" \
-  --manifest "$source_manifest"
-git worktree remove "$timing_tree"
-rmdir "$timing_parent"
+python3 benches/artifact_manifest.py verify \
+  --repo-root "$PWD" \
+  --manifest benchmark-results/evaluation-artifact-manifest.json
 ```
-
-The result manifest transitively binds that pre-run snapshot to the selection
-TSV, all 40 raw CSVs, batch aggregate, summary, run log, and exact reporting
-scripts. The two manifest-verification commands above currently validate 50
-result files and 35 source inputs, respectively.
-
-Artifact revisions are intentionally reported per result class rather than as
-one clean-revision run:
-
-| Result class | LP provenance |
-| --- | --- |
-| 79 x 79 corpus, authorization, and size | Clean run recorded at `39db9cb` |
-| Compiler scaling CSV | Archived at `103a739`; no separate run-time revision attestation |
-| Controlled timing | Clean LP run at `1f750c4` against baseline `089a548`, with one tracked lockfile supplied to both offline locked builds |
-| Boolean differential and compatibility matrix | Data and generators archived at `4471592` |
-| 79-key encoded-right-set validation | Output records both revisions, LP-library worktree status, and SHA-256 hashes of both generators |
-| 144-policy unit validation | Clean source commit `af288f9` |
 
 Classic and Hybridized timing results are interpreted separately; no result
 pools the scenarios.
@@ -303,6 +285,10 @@ The timing experiment also writes only top-level files in
 `timing-bNN-<scenario>-<variant>.csv` raw files, `timing-batches.csv`,
 `timing-summary.json`, `timing-summary.stdout.json`, `timing-run.log`,
 `timing-source-manifest.json`, and `timing-artifact-manifest.json`.
+The complete run also writes `unit-validation.log`,
+`unit-validation-metadata.json`, `compiler-scaling.csv`,
+`compiler-scaling-metadata.json`, and `evaluation-artifact-manifest.json` at
+that same top level.
 
 The Boolean report requires all 360 decisions in the ten shared-preservation
 cases to agree, while recording the repeated-hierarchy and incompatible-anarchy
@@ -314,6 +300,8 @@ silently narrow its authority.
 
 ## Artifact files
 
+- [`benches/run_all_evaluation.sh`](benches/run_all_evaluation.sh): canonical
+  clean-revision driver for every paper experiment;
 - [`examples/evaluation_benchmark.rs`](examples/evaluation_benchmark.rs): shared
   measurement program compiled against both implementations;
 - [`benches/run_evaluation.sh`](benches/run_evaluation.sh): build, sharding, and

@@ -10,6 +10,17 @@ per_stratum=${SAMPLE_PER_STRATUM:-20}
 selection_seed=${SELECTION_SEED:-20260813}
 results_dir=${RESULTS_DIR:-"$repo_dir/benchmark-results"}
 pin_cpu=${PIN_CPU:-}
+lp_ref=$(git -C "$repo_dir" rev-parse HEAD)
+expected_lp_head=${EXPECTED_LP_HEAD:-$lp_ref}
+if [[ "$lp_ref" != "$expected_lp_head" ]]; then
+    echo "LP HEAD changed: expected $expected_lp_head, found $lp_ref" >&2
+    exit 2
+fi
+if [[ -n $(git -C "$repo_dir" status --porcelain --untracked-files=all -- \
+    . ':(exclude)benchmark-results/**') ]]; then
+    echo "controlled timing requires a clean LP source worktree" >&2
+    exit 2
+fi
 baseline_dir=$(mktemp -d)
 trap 'rm -rf "$baseline_dir"' EXIT
 

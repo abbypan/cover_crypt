@@ -92,7 +92,7 @@ def key_rights_report(
     lp_path: str,
     rust_generator: str,
     lp_ref: str,
-    lp_library_dirty: bool,
+    lp_worktree_dirty: bool,
 ) -> dict[str, Any]:
     baseline = load(baseline_path)
     lp = load(lp_path)
@@ -153,7 +153,8 @@ def key_rights_report(
     return {
         "baseline_ref": "089a548",
         "lp_ref": lp_ref,
-        "lp_library_worktree_dirty": lp_library_dirty,
+        "lp_git_head": lp_ref,
+        "lp_worktree_dirty": lp_worktree_dirty,
         "scenario": "classic",
         "coordinate_universe_rights": len(baseline_probes),
         "normalized_key_policies": len(rows),
@@ -175,7 +176,12 @@ def index_cases(document: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return cases
 
 
-def boolean_report(baseline_path: str, lp_path: str) -> dict[str, Any]:
+def boolean_report(
+    baseline_path: str,
+    lp_path: str,
+    lp_ref: str,
+    lp_worktree_dirty: bool,
+) -> dict[str, Any]:
     baseline = load(baseline_path)
     lp = load(lp_path)
     if baseline["variant"] != "covercrypt" or lp["variant"] != "lp-covercrypt":
@@ -232,6 +238,8 @@ def boolean_report(baseline_path: str, lp_path: str) -> dict[str, Any]:
 
     return {
         "baseline_ref": "089a548",
+        "lp_git_head": lp_ref,
+        "lp_worktree_dirty": lp_worktree_dirty,
         "complete_downward_closed_keys": len(baseline["complete_key_policies"]),
         "cases": len(rows),
         "preservation_cases": preservation,
@@ -244,7 +252,9 @@ def boolean_report(baseline_path: str, lp_path: str) -> dict[str, Any]:
     }
 
 
-def compatibility_report(paths: list[str]) -> dict[str, Any]:
+def compatibility_report(
+    paths: list[str], lp_ref: str, lp_worktree_dirty: bool
+) -> dict[str, Any]:
     documents = [load(path) for path in paths]
     expected_keys = {
         (scenario, producer, consumer)
@@ -308,6 +318,8 @@ def compatibility_report(paths: list[str]) -> dict[str, Any]:
     documents.sort(key=lambda doc: (doc["scenario"], doc["producer"], doc["consumer"]))
     return {
         "baseline_ref": "089a548",
+        "lp_git_head": lp_ref,
+        "lp_worktree_dirty": lp_worktree_dirty,
         "rows": len(documents),
         "scenarios": ["classic", "hybridized"],
         "stateful_objects_same_version_only": ["AccessStructure", "MSK", "MPK"],
@@ -327,22 +339,30 @@ def main() -> None:
     parser.add_argument("--lp-key-rights", required=True)
     parser.add_argument("--rust-generator", required=True)
     parser.add_argument("--lp-ref", required=True)
-    parser.add_argument("--lp-library-dirty", choices=("true", "false"), required=True)
+    parser.add_argument("--lp-worktree-dirty", choices=("true", "false"), required=True)
     parser.add_argument("--compatibility", nargs="+", required=True)
     parser.add_argument("--boolean-output", required=True)
     parser.add_argument("--key-rights-output", required=True)
     parser.add_argument("--matrix-output", required=True)
     args = parser.parse_args()
 
-    boolean = boolean_report(args.baseline_boolean, args.lp_boolean)
+    lp_worktree_dirty = args.lp_worktree_dirty == "true"
+    boolean = boolean_report(
+        args.baseline_boolean,
+        args.lp_boolean,
+        args.lp_ref,
+        lp_worktree_dirty,
+    )
     key_rights = key_rights_report(
         args.baseline_key_rights,
         args.lp_key_rights,
         args.rust_generator,
         args.lp_ref,
-        args.lp_library_dirty == "true",
+        lp_worktree_dirty,
     )
-    matrix = compatibility_report(args.compatibility)
+    matrix = compatibility_report(
+        args.compatibility, args.lp_ref, lp_worktree_dirty
+    )
     write(args.boolean_output, boolean)
     write(args.key_rights_output, key_rights)
     write(args.matrix_output, matrix)

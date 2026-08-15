@@ -1,6 +1,21 @@
 # Paper evaluation benchmark
 
-Validate the Boolean-language compiler before running the timed corpus:
+The canonical artifact must be generated from one clean LP source commit:
+
+```sh
+benches/run_all_evaluation.sh
+```
+
+This driver runs every test and experiment below, rejects any source or HEAD
+change between stages, and emits a unified manifest only if every result class
+records that same source revision. The individual commands below are diagnostic
+entry points and must not be combined across revisions.
+
+Commit source and runner changes before starting. Generated outputs may be
+stored afterward in a results-only archival commit; every experiment still
+names the single clean source commit fixed at the start of this run.
+
+Validate the Boolean-language compiler independently with:
 
 ```sh
 cargo test test_exhaustive_small_model_semantics_144_policies
@@ -31,7 +46,7 @@ enumerates the complete 80-right coordinate universe and requires exact set
 equality for every normalized key: v15 plus the key adapter against independent
 unrestricted completion, and LP against independent default-minimal semantics.
 
-Run the complete experiment from the repository root:
+Run the exhaustive corpus independently from the repository root:
 
 ```sh
 benches/run_evaluation.sh
@@ -61,7 +76,7 @@ Set `PIN_WORKERS=1` on Linux to bind shard `N` to logical CPU `N`.
 The runner benchmarks two separate builds:
 
 - original Covercrypt from release commit `089a548`;
-- LP-Covercrypt from the current working tree.
+- LP-Covercrypt from the clean source commit fixed by the unified runner.
 
 Both builds execute the same Rust measurement source. Classic and Hybridized
 scenarios are reported separately. Each uses 79 ciphertext policies and 79
@@ -160,3 +175,9 @@ Generated files:
   V1/V2 AccessStructure, MSK, and MPK loading is rejected; USK and PKE
   ciphertext wire objects remain usable in their original MSK domain. A legacy
   v15 omission-key remains broad after LP deserialization and must be retired.
+- `unit-validation.log` and `unit-validation-metadata.json`: the complete
+  default test suite and its clean source revision;
+- `compiler-scaling.csv` and `compiler-scaling-metadata.json`: scaling rows and
+  their clean source revision;
+- `evaluation-artifact-manifest.json`: hashes all retained result classes and
+  requires a single clean LP source revision across them.

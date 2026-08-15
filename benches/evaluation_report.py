@@ -535,7 +535,18 @@ def main() -> None:
             "workers_cpu_pinned": args.pinned == "1",
             "lp_git_head": command_output(["git", "rev-parse", "HEAD"]),
             "lp_worktree_dirty": bool(
-                command_output(["git", "status", "--porcelain"], "")
+                command_output(
+                    [
+                        "git",
+                        "status",
+                        "--porcelain",
+                        "--untracked-files=all",
+                        "--",
+                        ".",
+                        ":(exclude)benchmark-results/**",
+                    ],
+                    "",
+                )
             ),
             "os": platform.platform(),
             "cpu": cpu_model(),

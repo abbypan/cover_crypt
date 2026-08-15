@@ -8,6 +8,17 @@ warmup=${WARMUP:-20}
 jobs=${JOBS:-1}
 pin_workers=${PIN_WORKERS:-0}
 results_dir=${RESULTS_DIR:-"$repo_dir/benchmark-results"}
+lp_ref=$(git -C "$repo_dir" rev-parse HEAD)
+expected_lp_head=${EXPECTED_LP_HEAD:-$lp_ref}
+if [[ "$lp_ref" != "$expected_lp_head" ]]; then
+    echo "LP HEAD changed: expected $expected_lp_head, found $lp_ref" >&2
+    exit 2
+fi
+if [[ -n $(git -C "$repo_dir" status --porcelain --untracked-files=all -- \
+    . ':(exclude)benchmark-results/**') ]]; then
+    echo "exhaustive evaluation requires a clean LP source worktree" >&2
+    exit 2
+fi
 baseline_dir=$(mktemp -d)
 trap 'rm -rf "$baseline_dir"' EXIT
 
@@ -35,6 +46,7 @@ mkdir -p "$results_dir"
 echo "Preparing original Covercrypt at $baseline_ref"
 git -C "$repo_dir" archive "$baseline_ref" | tar -x -C "$baseline_dir"
 cp "$repo_dir/examples/evaluation_benchmark.rs" "$baseline_dir/examples/evaluation_benchmark.rs"
+cp "$repo_dir/Cargo.lock" "$baseline_dir/Cargo.lock"
 
 run_shards() {
     local scenario=$1
@@ -78,7 +90,7 @@ run_shards() {
 }
 
 echo "Building original Covercrypt"
-cargo build --quiet --release \
+cargo build --quiet --offline --locked --release \
     --manifest-path "$baseline_dir/Cargo.toml" \
     --example evaluation_benchmark
 echo "Benchmarking original Covercrypt ($iterations iterations per pair, $jobs worker(s))"
@@ -88,7 +100,7 @@ for scenario in classic hybridized; do
 done
 
 echo "Building LP-Covercrypt"
-cargo build --quiet --release \
+cargo build --quiet --offline --locked --release \
     --manifest-path "$repo_dir/Cargo.toml" \
     --example evaluation_benchmark
 echo "Benchmarking LP-Covercrypt ($iterations iterations per pair, $jobs worker(s))"
