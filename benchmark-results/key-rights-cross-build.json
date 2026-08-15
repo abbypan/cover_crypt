@@ -1,7 +1,8 @@
 {
   "baseline_ref": "089a548",
-  "lp_ref": "215bd8488850423358a1b921d7cbe2204de2a9c7",
-  "lp_library_worktree_dirty": false,
+  "lp_ref": "2dff4d4d386fa2704488a7ee0cadf21cb5107252",
+  "lp_git_head": "2dff4d4d386fa2704488a7ee0cadf21cb5107252",
+  "lp_worktree_dirty": false,
   "scenario": "classic",
   "coordinate_universe_rights": 80,
   "normalized_key_policies": 79,
@@ -10,7 +11,7 @@
   "all_lp_sets_equal_independent_default_minimal_model": true,
   "generator_files_sha256": {
     "cross_version_validation.rs": "8949e62be3b35836d7cb2e13ad8187c4a46e54055bab24bf0c9681a6d86f9a97",
-    "cross_version_report.py": "738a0e875a6a776b637b9c38f21818c831a923d8405e555d7edb15960eb951ae"
+    "cross_version_report.py": "722fdee694b743738e9abdb6d193429c77d0144cd1ecdfdd39a0f5ca9076fc5e"
   },
   "rows": [
     {

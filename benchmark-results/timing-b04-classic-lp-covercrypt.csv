@@ -1,101 +1,101 @@
 scenario,variant,baseline_ref,enc_ap,user_ap,implementation_user_ap,y_relation,user_rights,user_key_bytes,ciphertext_rights_hex,ciphertext_bytes,decryption_result,iterations,total_ns,mean_ns,batch_id,order_position
-classic,lp-covercrypt,089a548,"CTR::EN","DPT::MKG && CTR::FR","DPT::MKG && CTR::FR",different,4,307,"08",178,failure,300,48430126,161433.753,4,1
-classic,lp-covercrypt,089a548,"CTR::EN","DPT::$ && CTR::EN","DPT::$ && CTR::EN",different,8,453,"08",178,success,300,65587021,218623.403,4,1
-classic,lp-covercrypt,089a548,"CTR::EN","SEC::MED && CTR::FR","SEC::MED && CTR::FR",different,6,380,"08",178,failure,300,65042491,216808.303,4,1
-classic,lp-covercrypt,089a548,"CTR::FR","CTR::$","CTR::$",different,4,306,"09",178,success,300,51048336,170161.120,4,1
-classic,lp-covercrypt,089a548,"CTR::FR","DPT::DEV && CTR::EN","DPT::DEV && CTR::EN",different,4,307,"09",178,failure,300,48806922,162689.740,4,1
-classic,lp-covercrypt,089a548,"CTR::FR","SEC::MED && DPT::$ && CTR::FR","SEC::MED && DPT::$ && CTR::FR",same,24,1049,"09",178,success,300,132985901,443286.337,4,1
-classic,lp-covercrypt,089a548,"CTR::FR","SEC::HIG && CTR::FR","SEC::HIG && CTR::FR",different,8,453,"09",178,success,300,67915408,226384.693,4,1
-classic,lp-covercrypt,089a548,"DPT::DEV","SEC::MED && DPT::$ && CTR::EN","SEC::MED && DPT::$ && CTR::EN",same,24,1049,"05",178,success,300,138911654,463038.847,4,1
-classic,lp-covercrypt,089a548,"DPT::DEV && CTR::EN","DPT::DEV && CTR::$","DPT::DEV && CTR::$",different,8,453,"0508",178,success,300,67819718,226065.727,4,1
-classic,lp-covercrypt,089a548,"DPT::DEV && CTR::EN","DPT::MKG && CTR::FR","DPT::MKG && CTR::FR",different,4,307,"0508",178,failure,300,48743914,162479.713,4,1
-classic,lp-covercrypt,089a548,"DPT::DEV && CTR::EN","DPT::$ && CTR::EN","DPT::$ && CTR::EN",different,8,453,"0508",178,success,300,70834482,236114.940,4,1
-classic,lp-covercrypt,089a548,"DPT::DEV && CTR::EN","SEC::MED && DPT::DEV && CTR::$","SEC::MED && DPT::DEV && CTR::$",same,24,1049,"0508",178,success,300,137353632,457845.440,4,1
-classic,lp-covercrypt,089a548,"DPT::DEV && CTR::FR","SEC::$ && DPT::$ && CTR::EN","SEC::$ && DPT::$ && CTR::EN",same,40,1645,"0509",178,failure,300,338763945,1129213.150,4,1
-classic,lp-covercrypt,089a548,"DPT::DEV && CTR::$","DPT::DEV && CTR::$","DPT::DEV && CTR::$",different,8,453,"0507",178,success,300,66104973,220349.910,4,1
-classic,lp-covercrypt,089a548,"DPT::DEV && CTR::$","SEC::LOW && DPT::$ && CTR::$","SEC::LOW && DPT::$ && CTR::$",same,32,1347,"0507",178,success,300,168408472,561361.573,4,1
-classic,lp-covercrypt,089a548,"DPT::MKG && CTR::EN","SEC::$ && DPT::MKG && CTR::EN","SEC::$ && DPT::MKG && CTR::EN",same,20,899,"0608",178,success,300,109275765,364252.550,4,1
-classic,lp-covercrypt,089a548,"DPT::MKG && CTR::EN","SEC::$ && DPT::MKG && CTR::$","SEC::$ && DPT::MKG && CTR::$",same,40,1645,"0608",178,success,300,198901298,663004.327,4,1
-classic,lp-covercrypt,089a548,"DPT::MKG && CTR::FR","SEC::MED && DPT::DEV && CTR::$","SEC::MED && DPT::DEV && CTR::$",same,24,1049,"0609",178,failure,300,209671958,698906.527,4,1
-classic,lp-covercrypt,089a548,"DPT::MKG && CTR::FR","SEC::$ && DPT::$ && CTR::FR","SEC::$ && DPT::$ && CTR::FR",same,40,1645,"0609",178,success,300,190444709,634815.697,4,1
-classic,lp-covercrypt,089a548,"DPT::MKG && CTR::$","CTR::FR","CTR::FR",different,2,234,"0607",178,failure,300,32148371,107161.237,4,1
-classic,lp-covercrypt,089a548,"DPT::MKG && CTR::$","SEC::MED && DPT::DEV","SEC::MED && DPT::DEV",different,6,380,"0607",178,failure,300,64505474,215018.247,4,1
-classic,lp-covercrypt,089a548,"DPT::$ && CTR::FR","SEC::LOW","SEC::LOW",different,2,234,"0409",178,failure,300,32247437,107491.457,4,1
-classic,lp-covercrypt,089a548,"DPT::$ && CTR::$","SEC::MED && DPT::MKG && CTR::$","SEC::MED && DPT::MKG && CTR::$",same,24,1049,"0407",178,failure,300,209529881,698432.937,4,1
-classic,lp-covercrypt,089a548,"DPT::$ && CTR::$","SEC::HIG && DPT::DEV && CTR::EN","SEC::HIG && DPT::DEV && CTR::EN",same,16,751,"0407",178,failure,300,145017464,483391.547,4,1
-classic,lp-covercrypt,089a548,"SEC::LOW","SEC::MED && DPT::DEV","SEC::MED && DPT::DEV",different,6,380,"01",178,success,300,57475028,191583.427,4,1
-classic,lp-covercrypt,089a548,"SEC::LOW","SEC::MED && DPT::$ && CTR::EN","SEC::MED && DPT::$ && CTR::EN",same,24,1049,"01",178,success,300,135327362,451091.207,4,1
-classic,lp-covercrypt,089a548,"SEC::LOW","SEC::$ && CTR::$","SEC::$ && CTR::$",different,20,894,"01",178,success,300,113237405,377458.017,4,1
-classic,lp-covercrypt,089a548,"SEC::LOW && CTR::EN","SEC::LOW && CTR::EN","SEC::LOW && CTR::EN",different,4,307,"0108",178,success,300,49249842,164166.140,4,1
-classic,lp-covercrypt,089a548,"SEC::LOW && CTR::EN","SEC::$ && CTR::EN","SEC::$ && CTR::EN",different,10,526,"0108",178,success,300,75293745,250979.150,4,1
-classic,lp-covercrypt,089a548,"SEC::LOW && CTR::EN","SEC::$ && CTR::$","SEC::$ && CTR::$",different,20,894,"0108",178,success,300,108674237,362247.457,4,1
-classic,lp-covercrypt,089a548,"SEC::LOW && CTR::EN","SEC::$ && DPT::DEV && CTR::EN","SEC::$ && DPT::DEV && CTR::EN",same,20,899,"0108",178,success,300,109645389,365484.630,4,1
-classic,lp-covercrypt,089a548,"SEC::LOW && CTR::$","SEC::LOW && CTR::$","SEC::LOW && CTR::$",different,8,453,"0107",178,success,300,64646317,215487.723,4,1
-classic,lp-covercrypt,089a548,"SEC::LOW && CTR::$","SEC::MED && CTR::$","SEC::MED && CTR::$",different,12,600,"0107",178,success,300,81864278,272880.927,4,1
-classic,lp-covercrypt,089a548,"SEC::LOW && DPT::DEV","SEC::MED && DPT::DEV && CTR::$","SEC::MED && DPT::DEV && CTR::$",same,24,1049,"0105",178,success,300,123520279,411734.263,4,1
-classic,lp-covercrypt,089a548,"SEC::LOW && DPT::DEV","SEC::MED && DPT::$ && CTR::EN","SEC::MED && DPT::$ && CTR::EN",same,24,1049,"0105",178,success,300,122535592,408451.973,4,1
-classic,lp-covercrypt,089a548,"SEC::LOW && DPT::DEV","SEC::HIG && DPT::$ && CTR::EN","SEC::HIG && DPT::$ && CTR::EN",same,32,1347,"0105",178,success,300,176156082,587186.940,4,1
-classic,lp-covercrypt,089a548,"SEC::LOW && DPT::DEV && CTR::EN","SEC::HIG && CTR::EN","SEC::HIG && CTR::EN",different,8,453,"010508",178,failure,300,80658327,268861.090,4,1
-classic,lp-covercrypt,089a548,"SEC::LOW && DPT::DEV && CTR::$","SEC::HIG && DPT::$ && CTR::EN","SEC::HIG && DPT::$ && CTR::EN",same,32,1347,"010507",178,failure,300,274163023,913876.743,4,1
-classic,lp-covercrypt,089a548,"SEC::LOW && DPT::MKG","SEC::$ && DPT::DEV","SEC::$ && DPT::DEV",different,10,526,"0106",178,failure,300,96808625,322695.417,4,1
-classic,lp-covercrypt,089a548,"SEC::LOW && DPT::MKG","SEC::$ && DPT::$ && CTR::$","SEC::$ && DPT::$ && CTR::$",same,80,3147,"0106",178,success,300,364796417,1215988.057,4,1
-classic,lp-covercrypt,089a548,"SEC::LOW && DPT::MKG && CTR::EN","SEC::LOW && DPT::MKG && CTR::EN","SEC::LOW && DPT::MKG && CTR::EN",same,8,455,"010608",178,success,300,65730751,219102.503,4,1
-classic,lp-covercrypt,089a548,"SEC::LOW && DPT::MKG && CTR::EN","SEC::LOW && DPT::MKG && CTR::$","SEC::LOW && DPT::MKG && CTR::$",same,16,751,"010608",178,success,300,97810132,326033.773,4,1
-classic,lp-covercrypt,089a548,"SEC::LOW && DPT::MKG && CTR::FR","DPT::$ && CTR::$","DPT::$ && CTR::$",different,16,747,"010609",178,failure,300,145386116,484620.387,4,1
-classic,lp-covercrypt,089a548,"SEC::LOW && DPT::MKG && CTR::FR","SEC::$ && DPT::MKG","SEC::$ && DPT::MKG",different,10,526,"010609",178,failure,300,96739255,322464.183,4,1
-classic,lp-covercrypt,089a548,"SEC::LOW && DPT::MKG && CTR::$","SEC::$ && DPT::MKG","SEC::$ && DPT::MKG",different,10,526,"010607",178,failure,300,96927457,323091.523,4,1
-classic,lp-covercrypt,089a548,"SEC::LOW && DPT::$ && CTR::EN","SEC::MED && DPT::MKG && CTR::FR","SEC::MED && DPT::MKG && CTR::FR",same,12,603,"010408",178,failure,300,113080481,376934.937,4,1
-classic,lp-covercrypt,089a548,"SEC::LOW && DPT::$ && CTR::$","CTR::FR","CTR::FR",different,2,234,"010407",178,failure,300,32156907,107189.690,4,1
-classic,lp-covercrypt,089a548,"SEC::LOW && DPT::$ && CTR::$","SEC::$ && DPT::MKG && CTR::$","SEC::$ && DPT::MKG && CTR::$",same,40,1645,"010407",178,failure,300,338979089,1129930.297,4,1
-classic,lp-covercrypt,089a548,"SEC::MED","SEC::HIG","SEC::HIG",different,4,306,"02",178,success,300,50163346,167211.153,4,1
-classic,lp-covercrypt,089a548,"SEC::MED","SEC::$ && DPT::DEV","SEC::$ && DPT::DEV",different,10,526,"02",178,success,300,71063723,236879.077,4,1
-classic,lp-covercrypt,089a548,"SEC::MED","SEC::$ && DPT::$ && CTR::FR","SEC::$ && DPT::$ && CTR::FR",same,40,1645,"02",178,success,300,191775645,639252.150,4,1
-classic,lp-covercrypt,089a548,"SEC::MED && CTR::EN","SEC::$ && DPT::$ && CTR::EN","SEC::$ && DPT::$ && CTR::EN",same,40,1645,"0208",178,success,300,187908031,626360.103,4,1
-classic,lp-covercrypt,089a548,"SEC::MED && CTR::FR","SEC::MED && CTR::FR","SEC::MED && CTR::FR",different,6,380,"0209",178,success,300,56623762,188745.873,4,1
-classic,lp-covercrypt,089a548,"SEC::MED && CTR::$","SEC::HIG && CTR::$","SEC::HIG && CTR::$",different,16,747,"0207",178,success,300,96014064,320046.880,4,1
-classic,lp-covercrypt,089a548,"SEC::MED && CTR::$","SEC::HIG && DPT::DEV && CTR::EN","SEC::HIG && DPT::DEV && CTR::EN",same,16,751,"0207",178,failure,300,145064223,483547.410,4,1
-classic,lp-covercrypt,089a548,"SEC::MED && DPT::DEV && CTR::EN","SEC::HIG && CTR::$","SEC::HIG && CTR::$",different,16,747,"020508",178,failure,300,145347494,484491.647,4,1
-classic,lp-covercrypt,089a548,"SEC::MED && DPT::DEV && CTR::FR","SEC::LOW && DPT::MKG && CTR::EN","SEC::LOW && DPT::MKG && CTR::EN",same,8,455,"020509",178,failure,300,80591691,268638.970,4,1
-classic,lp-covercrypt,089a548,"SEC::MED && DPT::DEV && CTR::FR","SEC::HIG","SEC::HIG",different,4,306,"020509",178,failure,300,48289382,160964.607,4,1
-classic,lp-covercrypt,089a548,"SEC::MED && DPT::DEV && CTR::$","SEC::$ && DPT::MKG && CTR::EN","SEC::$ && DPT::MKG && CTR::EN",same,20,899,"020507",178,failure,300,177546670,591822.233,4,1
-classic,lp-covercrypt,089a548,"SEC::MED && DPT::MKG && CTR::EN","SEC::$ && DPT::MKG && CTR::EN","SEC::$ && DPT::MKG && CTR::EN",same,20,899,"020608",178,success,300,113933991,379779.970,4,1
-classic,lp-covercrypt,089a548,"SEC::MED && DPT::MKG && CTR::FR","CTR::EN","CTR::EN",different,2,234,"020609",178,failure,300,32339089,107796.963,4,1
-classic,lp-covercrypt,089a548,"SEC::MED && DPT::MKG && CTR::FR","SEC::MED && CTR::FR","SEC::MED && CTR::FR",different,6,380,"020609",178,failure,300,64471309,214904.363,4,1
-classic,lp-covercrypt,089a548,"SEC::MED && DPT::MKG && CTR::$","DPT::$ && CTR::$","DPT::$ && CTR::$",different,16,747,"020607",178,failure,300,145100951,483669.837,4,1
-classic,lp-covercrypt,089a548,"SEC::MED && DPT::$","CTR::$","CTR::$",different,4,306,"0204",178,failure,300,48326551,161088.503,4,1
-classic,lp-covercrypt,089a548,"SEC::MED && DPT::$","SEC::HIG","SEC::HIG",different,4,306,"0204",178,failure,300,48367047,161223.490,4,1
-classic,lp-covercrypt,089a548,"SEC::MED && DPT::$","SEC::$ && DPT::MKG && CTR::FR","SEC::$ && DPT::MKG && CTR::FR",same,20,899,"0204",178,failure,300,177591694,591972.313,4,1
-classic,lp-covercrypt,089a548,"SEC::MED && DPT::$ && CTR::EN","CTR::FR","CTR::FR",different,2,234,"020408",178,failure,300,32242828,107476.093,4,1
-classic,lp-covercrypt,089a548,"SEC::MED && DPT::$ && CTR::FR","SEC::LOW && DPT::DEV","SEC::LOW && DPT::DEV",different,4,307,"020409",178,failure,300,48318987,161063.290,4,1
-classic,lp-covercrypt,089a548,"SEC::HIG","DPT::MKG","DPT::MKG",different,2,234,"03",178,failure,300,32190390,107301.300,4,1
-classic,lp-covercrypt,089a548,"SEC::HIG","SEC::MED && DPT::MKG && CTR::EN","SEC::MED && DPT::MKG && CTR::EN",same,12,603,"03",178,failure,300,112838406,376128.020,4,1
-classic,lp-covercrypt,089a548,"SEC::HIG","SEC::HIG && DPT::$","SEC::HIG && DPT::$",different,16,747,"03",178,success,300,94617485,315391.617,4,1
-classic,lp-covercrypt,089a548,"SEC::HIG","SEC::$ && DPT::$ && CTR::$","SEC::$ && DPT::$ && CTR::$",same,80,3147,"03",178,success,300,373667764,1245559.213,4,1
-classic,lp-covercrypt,089a548,"SEC::HIG && CTR::EN","DPT::$ && CTR::EN","DPT::$ && CTR::EN",different,8,453,"0308",178,failure,300,80562156,268540.520,4,1
-classic,lp-covercrypt,089a548,"SEC::HIG && CTR::EN","SEC::HIG && DPT::MKG && CTR::$","SEC::HIG && DPT::MKG && CTR::$",same,32,1347,"0308",178,success,300,153688236,512294.120,4,1
-classic,lp-covercrypt,089a548,"SEC::HIG && CTR::FR","SEC::LOW && DPT::$ && CTR::$","SEC::LOW && DPT::$ && CTR::$",same,32,1347,"0309",178,failure,300,274382385,914607.950,4,1
-classic,lp-covercrypt,089a548,"SEC::HIG && CTR::FR","SEC::$ && DPT::DEV","SEC::$ && DPT::DEV",different,10,526,"0309",178,failure,300,96748170,322493.900,4,1
-classic,lp-covercrypt,089a548,"SEC::HIG && CTR::$","SEC::MED && CTR::EN","SEC::MED && CTR::EN",different,6,380,"0307",178,failure,300,64571998,215239.993,4,1
-classic,lp-covercrypt,089a548,"SEC::HIG && DPT::DEV && CTR::FR","DPT::MKG && CTR::EN","DPT::MKG && CTR::EN",different,4,307,"030509",178,failure,300,48488936,161629.787,4,1
-classic,lp-covercrypt,089a548,"SEC::HIG && DPT::MKG","SEC::$ && DPT::$","SEC::$ && DPT::$",different,20,894,"0306",178,success,300,118323633,394412.110,4,1
-classic,lp-covercrypt,089a548,"SEC::HIG && DPT::MKG && CTR::EN","SEC::$ && DPT::MKG","SEC::$ && DPT::MKG",different,10,526,"030608",178,failure,300,96705802,322352.673,4,1
-classic,lp-covercrypt,089a548,"SEC::HIG && DPT::$","DPT::$ && CTR::EN","DPT::$ && CTR::EN",different,8,453,"0304",178,failure,300,80595478,268651.593,4,1
-classic,lp-covercrypt,089a548,"SEC::HIG && DPT::$","SEC::$ && DPT::DEV","SEC::$ && DPT::DEV",different,10,526,"0304",178,failure,300,96922859,323076.197,4,1
-classic,lp-covercrypt,089a548,"SEC::HIG && DPT::$ && CTR::FR","SEC::MED && CTR::$","SEC::MED && CTR::$",different,12,600,"030409",178,failure,300,112802589,376008.630,4,1
-classic,lp-covercrypt,089a548,"SEC::HIG && DPT::$ && CTR::$","DPT::DEV && CTR::EN","DPT::DEV && CTR::EN",different,4,307,"030407",178,failure,300,48374622,161248.740,4,1
-classic,lp-covercrypt,089a548,"SEC::$ && CTR::EN","CTR::EN","CTR::EN",different,2,234,"0008",178,failure,300,32261173,107537.243,4,1
-classic,lp-covercrypt,089a548,"SEC::$ && CTR::EN","SEC::MED && DPT::MKG && CTR::EN","SEC::MED && DPT::MKG && CTR::EN",same,12,603,"0008",178,failure,300,112789425,375964.750,4,1
-classic,lp-covercrypt,089a548,"SEC::$ && DPT::DEV","DPT::DEV && CTR::EN","DPT::DEV && CTR::EN",different,4,307,"0005",178,failure,300,48366646,161222.153,4,1
-classic,lp-covercrypt,089a548,"SEC::$ && DPT::DEV","SEC::$ && DPT::$","SEC::$ && DPT::$",different,20,894,"0005",178,success,300,121372401,404574.670,4,1
-classic,lp-covercrypt,089a548,"SEC::$ && DPT::DEV && CTR::FR","SEC::MED && CTR::FR","SEC::MED && CTR::FR",different,6,380,"000509",178,failure,300,64398142,214660.473,4,1
-classic,lp-covercrypt,089a548,"SEC::$ && DPT::DEV && CTR::$","SEC::MED && DPT::DEV && CTR::EN","SEC::MED && DPT::DEV && CTR::EN",same,12,603,"000507",178,failure,300,112859987,376199.957,4,1
-classic,lp-covercrypt,089a548,"SEC::$ && DPT::DEV && CTR::$","SEC::MED && DPT::$ && CTR::FR","SEC::MED && DPT::$ && CTR::FR",same,24,1049,"000507",178,failure,300,209588691,698628.970,4,1
-classic,lp-covercrypt,089a548,"SEC::$ && DPT::MKG","SEC::$ && CTR::EN","SEC::$ && CTR::EN",different,10,526,"0006",178,failure,300,96767798,322559.327,4,1
-classic,lp-covercrypt,089a548,"SEC::$ && DPT::MKG && CTR::FR","SEC::LOW && DPT::DEV && CTR::EN","SEC::LOW && DPT::DEV && CTR::EN",same,8,455,"000609",178,failure,300,80701397,269004.657,4,1
-classic,lp-covercrypt,089a548,"SEC::$ && DPT::MKG && CTR::$","DPT::MKG && CTR::$","DPT::MKG && CTR::$",different,8,453,"000607",178,failure,300,80586471,268621.570,4,1
-classic,lp-covercrypt,089a548,"SEC::$ && DPT::MKG && CTR::$","SEC::LOW && DPT::MKG && CTR::EN","SEC::LOW && DPT::MKG && CTR::EN",same,8,455,"000607",178,failure,300,80549572,268498.573,4,1
-classic,lp-covercrypt,089a548,"SEC::$ && DPT::MKG && CTR::$","SEC::$ && DPT::DEV","SEC::$ && DPT::DEV",different,10,526,"000607",178,failure,300,96796712,322655.707,4,1
-classic,lp-covercrypt,089a548,"SEC::$ && DPT::$","SEC::MED && DPT::DEV && CTR::$","SEC::MED && DPT::DEV && CTR::$",same,24,1049,"0004",178,failure,300,209909673,699698.910,4,1
-classic,lp-covercrypt,089a548,"SEC::$ && DPT::$","SEC::$ && DPT::DEV","SEC::$ && DPT::DEV",different,10,526,"0004",178,failure,300,96645649,322152.163,4,1
-classic,lp-covercrypt,089a548,"SEC::$ && DPT::$ && CTR::EN","SEC::$ && DPT::DEV","SEC::$ && DPT::DEV",different,10,526,"000408",178,failure,300,96885319,322951.063,4,1
-classic,lp-covercrypt,089a548,"SEC::$ && DPT::$ && CTR::$","SEC::MED && DPT::DEV && CTR::$","SEC::MED && DPT::DEV && CTR::$",same,24,1049,"000407",178,failure,300,209619118,698730.393,4,1
+classic,lp-covercrypt,089a548,"CTR::EN","DPT::MKG && CTR::FR","DPT::MKG && CTR::FR",different,4,307,"08",178,failure,300,168134057,560446.857,4,1
+classic,lp-covercrypt,089a548,"CTR::EN","DPT::$ && CTR::EN","DPT::$ && CTR::EN",different,8,453,"08",178,success,300,190293265,634310.883,4,1
+classic,lp-covercrypt,089a548,"CTR::EN","SEC::MED && CTR::FR","SEC::MED && CTR::FR",different,6,380,"08",178,failure,300,177616350,592054.500,4,1
+classic,lp-covercrypt,089a548,"CTR::FR","CTR::$","CTR::$",different,4,306,"09",178,success,300,129722320,432407.733,4,1
+classic,lp-covercrypt,089a548,"CTR::FR","DPT::DEV && CTR::EN","DPT::DEV && CTR::EN",different,4,307,"09",178,failure,300,181739132,605797.107,4,1
+classic,lp-covercrypt,089a548,"CTR::FR","SEC::MED && DPT::$ && CTR::FR","SEC::MED && DPT::$ && CTR::FR",same,24,1049,"09",178,success,300,474530210,1581767.367,4,1
+classic,lp-covercrypt,089a548,"CTR::FR","SEC::HIG && CTR::FR","SEC::HIG && CTR::FR",different,8,453,"09",178,success,300,250678831,835596.103,4,1
+classic,lp-covercrypt,089a548,"DPT::DEV","SEC::MED && DPT::$ && CTR::EN","SEC::MED && DPT::$ && CTR::EN",same,24,1049,"05",178,success,300,430961682,1436538.940,4,1
+classic,lp-covercrypt,089a548,"DPT::DEV && CTR::EN","DPT::DEV && CTR::$","DPT::DEV && CTR::$",different,8,453,"0508",178,success,300,147593746,491979.153,4,1
+classic,lp-covercrypt,089a548,"DPT::DEV && CTR::EN","DPT::MKG && CTR::FR","DPT::MKG && CTR::FR",different,4,307,"0508",178,failure,300,122933880,409779.600,4,1
+classic,lp-covercrypt,089a548,"DPT::DEV && CTR::EN","DPT::$ && CTR::EN","DPT::$ && CTR::EN",different,8,453,"0508",178,success,300,181513269,605044.230,4,1
+classic,lp-covercrypt,089a548,"DPT::DEV && CTR::EN","SEC::MED && DPT::DEV && CTR::$","SEC::MED && DPT::DEV && CTR::$",same,24,1049,"0508",178,success,300,380410820,1268036.067,4,1
+classic,lp-covercrypt,089a548,"DPT::DEV && CTR::FR","SEC::$ && DPT::$ && CTR::EN","SEC::$ && DPT::$ && CTR::EN",same,40,1645,"0509",178,failure,300,855890892,2852969.640,4,1
+classic,lp-covercrypt,089a548,"DPT::DEV && CTR::$","DPT::DEV && CTR::$","DPT::DEV && CTR::$",different,8,453,"0507",178,success,300,182248318,607494.393,4,1
+classic,lp-covercrypt,089a548,"DPT::DEV && CTR::$","SEC::LOW && DPT::$ && CTR::$","SEC::LOW && DPT::$ && CTR::$",same,32,1347,"0507",178,success,300,503619705,1678732.350,4,1
+classic,lp-covercrypt,089a548,"DPT::MKG && CTR::EN","SEC::$ && DPT::MKG && CTR::EN","SEC::$ && DPT::MKG && CTR::EN",same,20,899,"0608",178,success,300,352695122,1175650.407,4,1
+classic,lp-covercrypt,089a548,"DPT::MKG && CTR::EN","SEC::$ && DPT::MKG && CTR::$","SEC::$ && DPT::MKG && CTR::$",same,40,1645,"0608",178,success,300,464449987,1548166.623,4,1
+classic,lp-covercrypt,089a548,"DPT::MKG && CTR::FR","SEC::MED && DPT::DEV && CTR::$","SEC::MED && DPT::DEV && CTR::$",same,24,1049,"0609",178,failure,300,684045584,2280151.947,4,1
+classic,lp-covercrypt,089a548,"DPT::MKG && CTR::FR","SEC::$ && DPT::$ && CTR::FR","SEC::$ && DPT::$ && CTR::FR",same,40,1645,"0609",178,success,300,484502683,1615008.943,4,1
+classic,lp-covercrypt,089a548,"DPT::MKG && CTR::$","CTR::FR","CTR::FR",different,2,234,"0607",178,failure,300,75203476,250678.253,4,1
+classic,lp-covercrypt,089a548,"DPT::MKG && CTR::$","SEC::MED && DPT::DEV","SEC::MED && DPT::DEV",different,6,380,"0607",178,failure,300,175507837,585026.123,4,1
+classic,lp-covercrypt,089a548,"DPT::$ && CTR::FR","SEC::LOW","SEC::LOW",different,2,234,"0409",178,failure,300,79563022,265210.073,4,1
+classic,lp-covercrypt,089a548,"DPT::$ && CTR::$","SEC::MED && DPT::MKG && CTR::$","SEC::MED && DPT::MKG && CTR::$",same,24,1049,"0407",178,failure,300,536781497,1789271.657,4,1
+classic,lp-covercrypt,089a548,"DPT::$ && CTR::$","SEC::HIG && DPT::DEV && CTR::EN","SEC::HIG && DPT::DEV && CTR::EN",same,16,751,"0407",178,failure,300,327509298,1091697.660,4,1
+classic,lp-covercrypt,089a548,"SEC::LOW","SEC::MED && DPT::DEV","SEC::MED && DPT::DEV",different,6,380,"01",178,success,300,139134672,463782.240,4,1
+classic,lp-covercrypt,089a548,"SEC::LOW","SEC::MED && DPT::$ && CTR::EN","SEC::MED && DPT::$ && CTR::EN",same,24,1049,"01",178,success,300,248049120,826830.400,4,1
+classic,lp-covercrypt,089a548,"SEC::LOW","SEC::$ && CTR::$","SEC::$ && CTR::$",different,20,894,"01",178,success,300,247913726,826379.087,4,1
+classic,lp-covercrypt,089a548,"SEC::LOW && CTR::EN","SEC::LOW && CTR::EN","SEC::LOW && CTR::EN",different,4,307,"0108",178,success,300,87935674,293118.913,4,1
+classic,lp-covercrypt,089a548,"SEC::LOW && CTR::EN","SEC::$ && CTR::EN","SEC::$ && CTR::EN",different,10,526,"0108",178,success,300,139847680,466158.933,4,1
+classic,lp-covercrypt,089a548,"SEC::LOW && CTR::EN","SEC::$ && CTR::$","SEC::$ && CTR::$",different,20,894,"0108",178,success,300,267420740,891402.467,4,1
+classic,lp-covercrypt,089a548,"SEC::LOW && CTR::EN","SEC::$ && DPT::DEV && CTR::EN","SEC::$ && DPT::DEV && CTR::EN",same,20,899,"0108",178,success,300,254792436,849308.120,4,1
+classic,lp-covercrypt,089a548,"SEC::LOW && CTR::$","SEC::LOW && CTR::$","SEC::LOW && CTR::$",different,8,453,"0107",178,success,300,122970018,409900.060,4,1
+classic,lp-covercrypt,089a548,"SEC::LOW && CTR::$","SEC::MED && CTR::$","SEC::MED && CTR::$",different,12,600,"0107",178,success,300,146915374,489717.913,4,1
+classic,lp-covercrypt,089a548,"SEC::LOW && DPT::DEV","SEC::MED && DPT::DEV && CTR::$","SEC::MED && DPT::DEV && CTR::$",same,24,1049,"0105",178,success,300,265677079,885590.263,4,1
+classic,lp-covercrypt,089a548,"SEC::LOW && DPT::DEV","SEC::MED && DPT::$ && CTR::EN","SEC::MED && DPT::$ && CTR::EN",same,24,1049,"0105",178,success,300,277064154,923547.180,4,1
+classic,lp-covercrypt,089a548,"SEC::LOW && DPT::DEV","SEC::HIG && DPT::$ && CTR::EN","SEC::HIG && DPT::$ && CTR::EN",same,32,1347,"0105",178,success,300,419260759,1397535.863,4,1
+classic,lp-covercrypt,089a548,"SEC::LOW && DPT::DEV && CTR::EN","SEC::HIG && CTR::EN","SEC::HIG && CTR::EN",different,8,453,"010508",178,failure,300,199225476,664084.920,4,1
+classic,lp-covercrypt,089a548,"SEC::LOW && DPT::DEV && CTR::$","SEC::HIG && DPT::$ && CTR::EN","SEC::HIG && DPT::$ && CTR::EN",same,32,1347,"010507",178,failure,300,649142057,2163806.857,4,1
+classic,lp-covercrypt,089a548,"SEC::LOW && DPT::MKG","SEC::$ && DPT::DEV","SEC::$ && DPT::DEV",different,10,526,"0106",178,failure,300,280117951,933726.503,4,1
+classic,lp-covercrypt,089a548,"SEC::LOW && DPT::MKG","SEC::$ && DPT::$ && CTR::$","SEC::$ && DPT::$ && CTR::$",same,80,3147,"0106",178,success,300,759290819,2530969.397,4,1
+classic,lp-covercrypt,089a548,"SEC::LOW && DPT::MKG && CTR::EN","SEC::LOW && DPT::MKG && CTR::EN","SEC::LOW && DPT::MKG && CTR::EN",same,8,455,"010608",178,success,300,149998376,499994.587,4,1
+classic,lp-covercrypt,089a548,"SEC::LOW && DPT::MKG && CTR::EN","SEC::LOW && DPT::MKG && CTR::$","SEC::LOW && DPT::MKG && CTR::$",same,16,751,"010608",178,success,300,235658181,785527.270,4,1
+classic,lp-covercrypt,089a548,"SEC::LOW && DPT::MKG && CTR::FR","DPT::$ && CTR::$","DPT::$ && CTR::$",different,16,747,"010609",178,failure,300,469602820,1565342.733,4,1
+classic,lp-covercrypt,089a548,"SEC::LOW && DPT::MKG && CTR::FR","SEC::$ && DPT::MKG","SEC::$ && DPT::MKG",different,10,526,"010609",178,failure,300,295581131,985270.437,4,1
+classic,lp-covercrypt,089a548,"SEC::LOW && DPT::MKG && CTR::$","SEC::$ && DPT::MKG","SEC::$ && DPT::MKG",different,10,526,"010607",178,failure,300,225072620,750242.067,4,1
+classic,lp-covercrypt,089a548,"SEC::LOW && DPT::$ && CTR::EN","SEC::MED && DPT::MKG && CTR::FR","SEC::MED && DPT::MKG && CTR::FR",same,12,603,"010408",178,failure,300,240210089,800700.297,4,1
+classic,lp-covercrypt,089a548,"SEC::LOW && DPT::$ && CTR::$","CTR::FR","CTR::FR",different,2,234,"010407",178,failure,300,77553643,258512.143,4,1
+classic,lp-covercrypt,089a548,"SEC::LOW && DPT::$ && CTR::$","SEC::$ && DPT::MKG && CTR::$","SEC::$ && DPT::MKG && CTR::$",same,40,1645,"010407",178,failure,300,938977492,3129924.973,4,1
+classic,lp-covercrypt,089a548,"SEC::MED","SEC::HIG","SEC::HIG",different,4,306,"02",178,success,300,163050915,543503.050,4,1
+classic,lp-covercrypt,089a548,"SEC::MED","SEC::$ && DPT::DEV","SEC::$ && DPT::DEV",different,10,526,"02",178,success,300,258064553,860215.177,4,1
+classic,lp-covercrypt,089a548,"SEC::MED","SEC::$ && DPT::$ && CTR::FR","SEC::$ && DPT::$ && CTR::FR",same,40,1645,"02",178,success,300,504569957,1681899.857,4,1
+classic,lp-covercrypt,089a548,"SEC::MED && CTR::EN","SEC::$ && DPT::$ && CTR::EN","SEC::$ && DPT::$ && CTR::EN",same,40,1645,"0208",178,success,300,648854407,2162848.023,4,1
+classic,lp-covercrypt,089a548,"SEC::MED && CTR::FR","SEC::MED && CTR::FR","SEC::MED && CTR::FR",different,6,380,"0209",178,success,300,159202257,530674.190,4,1
+classic,lp-covercrypt,089a548,"SEC::MED && CTR::$","SEC::HIG && CTR::$","SEC::HIG && CTR::$",different,16,747,"0207",178,success,300,262544895,875149.650,4,1
+classic,lp-covercrypt,089a548,"SEC::MED && CTR::$","SEC::HIG && DPT::DEV && CTR::EN","SEC::HIG && DPT::DEV && CTR::EN",same,16,751,"0207",178,failure,300,338775257,1129250.857,4,1
+classic,lp-covercrypt,089a548,"SEC::MED && DPT::DEV && CTR::EN","SEC::HIG && CTR::$","SEC::HIG && CTR::$",different,16,747,"020508",178,failure,300,429865537,1432885.123,4,1
+classic,lp-covercrypt,089a548,"SEC::MED && DPT::DEV && CTR::FR","SEC::LOW && DPT::MKG && CTR::EN","SEC::LOW && DPT::MKG && CTR::EN",same,8,455,"020509",178,failure,300,200996978,669989.927,4,1
+classic,lp-covercrypt,089a548,"SEC::MED && DPT::DEV && CTR::FR","SEC::HIG","SEC::HIG",different,4,306,"020509",178,failure,300,118421236,394737.453,4,1
+classic,lp-covercrypt,089a548,"SEC::MED && DPT::DEV && CTR::$","SEC::$ && DPT::MKG && CTR::EN","SEC::$ && DPT::MKG && CTR::EN",same,20,899,"020507",178,failure,300,538111310,1793704.367,4,1
+classic,lp-covercrypt,089a548,"SEC::MED && DPT::MKG && CTR::EN","SEC::$ && DPT::MKG && CTR::EN","SEC::$ && DPT::MKG && CTR::EN",same,20,899,"020608",178,success,300,393837671,1312792.237,4,1
+classic,lp-covercrypt,089a548,"SEC::MED && DPT::MKG && CTR::FR","CTR::EN","CTR::EN",different,2,234,"020609",178,failure,300,101616692,338722.307,4,1
+classic,lp-covercrypt,089a548,"SEC::MED && DPT::MKG && CTR::FR","SEC::MED && CTR::FR","SEC::MED && CTR::FR",different,6,380,"020609",178,failure,300,190612734,635375.780,4,1
+classic,lp-covercrypt,089a548,"SEC::MED && DPT::MKG && CTR::$","DPT::$ && CTR::$","DPT::$ && CTR::$",different,16,747,"020607",178,failure,300,405480635,1351602.117,4,1
+classic,lp-covercrypt,089a548,"SEC::MED && DPT::$","CTR::$","CTR::$",different,4,306,"0204",178,failure,300,194097429,646991.430,4,1
+classic,lp-covercrypt,089a548,"SEC::MED && DPT::$","SEC::HIG","SEC::HIG",different,4,306,"0204",178,failure,300,209291134,697637.113,4,1
+classic,lp-covercrypt,089a548,"SEC::MED && DPT::$","SEC::$ && DPT::MKG && CTR::FR","SEC::$ && DPT::MKG && CTR::FR",same,20,899,"0204",178,failure,300,591282748,1970942.493,4,1
+classic,lp-covercrypt,089a548,"SEC::MED && DPT::$ && CTR::EN","CTR::FR","CTR::FR",different,2,234,"020408",178,failure,300,91797407,305991.357,4,1
+classic,lp-covercrypt,089a548,"SEC::MED && DPT::$ && CTR::FR","SEC::LOW && DPT::DEV","SEC::LOW && DPT::DEV",different,4,307,"020409",178,failure,300,113404869,378016.230,4,1
+classic,lp-covercrypt,089a548,"SEC::HIG","DPT::MKG","DPT::MKG",different,2,234,"03",178,failure,300,59009426,196698.087,4,1
+classic,lp-covercrypt,089a548,"SEC::HIG","SEC::MED && DPT::MKG && CTR::EN","SEC::MED && DPT::MKG && CTR::EN",same,12,603,"03",178,failure,300,194136984,647123.280,4,1
+classic,lp-covercrypt,089a548,"SEC::HIG","SEC::HIG && DPT::$","SEC::HIG && DPT::$",different,16,747,"03",178,success,300,208553259,695177.530,4,1
+classic,lp-covercrypt,089a548,"SEC::HIG","SEC::$ && DPT::$ && CTR::$","SEC::$ && DPT::$ && CTR::$",same,80,3147,"03",178,success,300,786081262,2620270.873,4,1
+classic,lp-covercrypt,089a548,"SEC::HIG && CTR::EN","DPT::$ && CTR::EN","DPT::$ && CTR::EN",different,8,453,"0308",178,failure,300,176118902,587063.007,4,1
+classic,lp-covercrypt,089a548,"SEC::HIG && CTR::EN","SEC::HIG && DPT::MKG && CTR::$","SEC::HIG && DPT::MKG && CTR::$",same,32,1347,"0308",178,success,300,479773885,1599246.283,4,1
+classic,lp-covercrypt,089a548,"SEC::HIG && CTR::FR","SEC::LOW && DPT::$ && CTR::$","SEC::LOW && DPT::$ && CTR::$",same,32,1347,"0309",178,failure,300,651438344,2171461.147,4,1
+classic,lp-covercrypt,089a548,"SEC::HIG && CTR::FR","SEC::$ && DPT::DEV","SEC::$ && DPT::DEV",different,10,526,"0309",178,failure,300,185800309,619334.363,4,1
+classic,lp-covercrypt,089a548,"SEC::HIG && CTR::$","SEC::MED && CTR::EN","SEC::MED && CTR::EN",different,6,380,"0307",178,failure,300,131961941,439873.137,4,1
+classic,lp-covercrypt,089a548,"SEC::HIG && DPT::DEV && CTR::FR","DPT::MKG && CTR::EN","DPT::MKG && CTR::EN",different,4,307,"030509",178,failure,300,92576678,308588.927,4,1
+classic,lp-covercrypt,089a548,"SEC::HIG && DPT::MKG","SEC::$ && DPT::$","SEC::$ && DPT::$",different,20,894,"0306",178,success,300,230404900,768016.333,4,1
+classic,lp-covercrypt,089a548,"SEC::HIG && DPT::MKG && CTR::EN","SEC::$ && DPT::MKG","SEC::$ && DPT::MKG",different,10,526,"030608",178,failure,300,200529983,668433.277,4,1
+classic,lp-covercrypt,089a548,"SEC::HIG && DPT::$","DPT::$ && CTR::EN","DPT::$ && CTR::EN",different,8,453,"0304",178,failure,300,180740931,602469.770,4,1
+classic,lp-covercrypt,089a548,"SEC::HIG && DPT::$","SEC::$ && DPT::DEV","SEC::$ && DPT::DEV",different,10,526,"0304",178,failure,300,226368149,754560.497,4,1
+classic,lp-covercrypt,089a548,"SEC::HIG && DPT::$ && CTR::FR","SEC::MED && CTR::$","SEC::MED && CTR::$",different,12,600,"030409",178,failure,300,260500952,868336.507,4,1
+classic,lp-covercrypt,089a548,"SEC::HIG && DPT::$ && CTR::$","DPT::DEV && CTR::EN","DPT::DEV && CTR::EN",different,4,307,"030407",178,failure,300,103938075,346460.250,4,1
+classic,lp-covercrypt,089a548,"SEC::$ && CTR::EN","CTR::EN","CTR::EN",different,2,234,"0008",178,failure,300,90645596,302151.987,4,1
+classic,lp-covercrypt,089a548,"SEC::$ && CTR::EN","SEC::MED && DPT::MKG && CTR::EN","SEC::MED && DPT::MKG && CTR::EN",same,12,603,"0008",178,failure,300,292942823,976476.077,4,1
+classic,lp-covercrypt,089a548,"SEC::$ && DPT::DEV","DPT::DEV && CTR::EN","DPT::DEV && CTR::EN",different,4,307,"0005",178,failure,300,120312443,401041.477,4,1
+classic,lp-covercrypt,089a548,"SEC::$ && DPT::DEV","SEC::$ && DPT::$","SEC::$ && DPT::$",different,20,894,"0005",178,success,300,265273493,884244.977,4,1
+classic,lp-covercrypt,089a548,"SEC::$ && DPT::DEV && CTR::FR","SEC::MED && CTR::FR","SEC::MED && CTR::FR",different,6,380,"000509",178,failure,300,121921520,406405.067,4,1
+classic,lp-covercrypt,089a548,"SEC::$ && DPT::DEV && CTR::$","SEC::MED && DPT::DEV && CTR::EN","SEC::MED && DPT::DEV && CTR::EN",same,12,603,"000507",178,failure,300,258531929,861773.097,4,1
+classic,lp-covercrypt,089a548,"SEC::$ && DPT::DEV && CTR::$","SEC::MED && DPT::$ && CTR::FR","SEC::MED && DPT::$ && CTR::FR",same,24,1049,"000507",178,failure,300,468217192,1560723.973,4,1
+classic,lp-covercrypt,089a548,"SEC::$ && DPT::MKG","SEC::$ && CTR::EN","SEC::$ && CTR::EN",different,10,526,"0006",178,failure,300,240587115,801957.050,4,1
+classic,lp-covercrypt,089a548,"SEC::$ && DPT::MKG && CTR::FR","SEC::LOW && DPT::DEV && CTR::EN","SEC::LOW && DPT::DEV && CTR::EN",same,8,455,"000609",178,failure,300,181533016,605110.053,4,1
+classic,lp-covercrypt,089a548,"SEC::$ && DPT::MKG && CTR::$","DPT::MKG && CTR::$","DPT::MKG && CTR::$",different,8,453,"000607",178,failure,300,207368718,691229.060,4,1
+classic,lp-covercrypt,089a548,"SEC::$ && DPT::MKG && CTR::$","SEC::LOW && DPT::MKG && CTR::EN","SEC::LOW && DPT::MKG && CTR::EN",same,8,455,"000607",178,failure,300,181065239,603550.797,4,1
+classic,lp-covercrypt,089a548,"SEC::$ && DPT::MKG && CTR::$","SEC::$ && DPT::DEV","SEC::$ && DPT::DEV",different,10,526,"000607",178,failure,300,250675285,835584.283,4,1
+classic,lp-covercrypt,089a548,"SEC::$ && DPT::$","SEC::MED && DPT::DEV && CTR::$","SEC::MED && DPT::DEV && CTR::$",same,24,1049,"0004",178,failure,300,544413770,1814712.567,4,1
+classic,lp-covercrypt,089a548,"SEC::$ && DPT::$","SEC::$ && DPT::DEV","SEC::$ && DPT::DEV",different,10,526,"0004",178,failure,300,312912554,1043041.847,4,1
+classic,lp-covercrypt,089a548,"SEC::$ && DPT::$ && CTR::EN","SEC::$ && DPT::DEV","SEC::$ && DPT::DEV",different,10,526,"000408",178,failure,300,290483180,968277.267,4,1
+classic,lp-covercrypt,089a548,"SEC::$ && DPT::$ && CTR::$","SEC::MED && DPT::DEV && CTR::$","SEC::MED && DPT::DEV && CTR::$",same,24,1049,"000407",178,failure,300,570388844,1901296.147,4,1

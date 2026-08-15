@@ -1,5 +1,7 @@
 {
   "baseline_ref": "089a548",
+  "lp_git_head": "2dff4d4d386fa2704488a7ee0cadf21cb5107252",
+  "lp_worktree_dirty": false,
   "rows": 8,
   "scenarios": [
     "classic",

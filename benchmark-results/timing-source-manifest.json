@@ -1,7 +1,7 @@
 {
   "schema": "lp-covercrypt-timing-source-v1",
   "purpose": "Source snapshot captured before the timing runner modifies canonical result files; binds the run to its implementation and tool inputs",
-  "git_head": "1f750c4840668ed0a8fc418a0dcc6afb8464c243",
+  "git_head": "2dff4d4d386fa2704488a7ee0cadf21cb5107252",
   "git_worktree_dirty": false,
   "baseline_git_commit": "089a548d4373dd099a57bb1c5219ad0a4cf25fe4",
   "files": [
@@ -17,18 +17,53 @@
     },
     {
       "path": "benches/artifact_manifest.py",
-      "bytes": 5285,
-      "sha256": "bee67c81c73c8289814eb12bff7bbeb8ce000cf25755309db894084fa7e0fa43"
+      "bytes": 11588,
+      "sha256": "f86000104bfe9b688e331703bb5e19d94ba5ecca6ff194280a9846f17e7e1de5"
+    },
+    {
+      "path": "benches/cross_version_report.py",
+      "bytes": 14586,
+      "sha256": "722fdee694b743738e9abdb6d193429c77d0144cd1ecdfdd39a0f5ca9076fc5e"
+    },
+    {
+      "path": "benches/evaluation_report.py",
+      "bytes": 22728,
+      "sha256": "2355375f5eefee198a31953e3dc766b88ace4fb4c885c3ff25ac7ce9140562f7"
+    },
+    {
+      "path": "benches/run_all_evaluation.sh",
+      "bytes": 3720,
+      "sha256": "2ade959518cfcf55e52facc81b427ae28571af787e8ac81150c0ce385b43ebe5"
+    },
+    {
+      "path": "benches/run_cross_version_validation.sh",
+      "bytes": 3258,
+      "sha256": "36d2dcef88ccddfb75c4859d599a366f718d9feab4d617d4c6aea1d2b7e04ff2"
+    },
+    {
+      "path": "benches/run_evaluation.sh",
+      "bytes": 4149,
+      "sha256": "dc615ad6f63321fdece08e02b05944ad3252d44e5dd92833e5c0f5cf39226b1e"
     },
     {
       "path": "benches/run_timing_batches.sh",
-      "bytes": 4393,
-      "sha256": "37cd4af9096832cb88fb011e22330eb9da7830b5a04437ebd49f73ebe2911fb7"
+      "bytes": 4827,
+      "sha256": "2f9c6288084d5af84b10daee5a6e8a734fd5bccf37cfd3340f0a0a5f77bc7b29"
     },
     {
       "path": "benches/timing_report.py",
       "bytes": 14722,
       "sha256": "2ae1184502b67b5316197f174c8f7ffaeec3746705d4133dc3df39e1089eaacc"
+    },
+    {
+      "path": "examples/compiler_scaling.rs",
+      "bytes": 2313,
+      "sha256": "34880d02b47a668b56ad9708f685d67c250d0bb0047b210a3d218607e9fb9d50"
+    },
+    {
+      "path": "examples/cross_version_validation.rs",
+      "bytes": 18553,
+      "sha256": "8949e62be3b35836d7cb2e13ad8187c4a46e54055bab24bf0c9681a6d86f9a97"
     },
     {
       "path": "examples/evaluation_benchmark.rs",
