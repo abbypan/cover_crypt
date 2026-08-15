@@ -29,12 +29,15 @@ if [[ -n "$pin_cpu" ]] && ! command -v taskset >/dev/null 2>&1; then
 fi
 
 mkdir -p "$results_dir"
-: > "$results_dir/timing-run.log"
 selection="$results_dir/timing-pairs.tsv"
 source_manifest="$results_dir/timing-source-manifest.json"
+# Capture source provenance before touching any tracked result file.  The
+# summary reads this manifest instead of treating newly written benchmark
+# outputs as source-tree dirtiness.
 python3 "$repo_dir/benches/artifact_manifest.py" source \
     --repo-root "$repo_dir" \
     --output "$source_manifest"
+: > "$results_dir/timing-run.log"
 python3 "$repo_dir/benches/timing_report.py" select \
     --pairs "$results_dir/classic-pairs.csv" \
     --output "$selection" \

@@ -4,7 +4,6 @@ review.txt
 *nix*
 /*.sh
 /.vscode
-Cargo.lock
 **/.#*
 **/#*#
 **/*~

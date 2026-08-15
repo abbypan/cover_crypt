@@ -278,7 +278,15 @@ def summarize(args: argparse.Namespace) -> None:
         results[scenario] = scenario_results
 
     digest = hashlib.sha256(args.pairs.read_bytes()).hexdigest()
-    source_manifest_digest = hashlib.sha256(args.source_manifest.read_bytes()).hexdigest()
+    source_manifest_bytes = args.source_manifest.read_bytes()
+    source_manifest_digest = hashlib.sha256(source_manifest_bytes).hexdigest()
+    source_metadata = json.loads(source_manifest_bytes)
+    if source_metadata.get("schema") != "lp-covercrypt-timing-source-v1":
+        raise ValueError("unexpected timing source-manifest schema")
+    if not isinstance(source_metadata.get("git_head"), str):
+        raise ValueError("timing source manifest has no git_head")
+    if not isinstance(source_metadata.get("git_worktree_dirty"), bool):
+        raise ValueError("timing source manifest has no worktree state")
     summary = {
         "design": {
             "replicated_batches": args.batches,
@@ -296,6 +304,7 @@ def summarize(args: argparse.Namespace) -> None:
             "source_manifest_sha256": source_manifest_digest,
             "cpu_pinned": args.pin_cpu != "",
             "pinned_cpu": int(args.pin_cpu) if args.pin_cpu != "" else None,
+            "source_state_captured_before_results": True,
         },
         "results": results,
         "environment": {
@@ -303,8 +312,8 @@ def summarize(args: argparse.Namespace) -> None:
             "cpu": cpu_model(),
             "rustc": command_output(["rustc", "--version"]),
             "cargo": command_output(["cargo", "--version"]),
-            "lp_git_head": command_output(["git", "rev-parse", "HEAD"]),
-            "lp_worktree_dirty": bool(command_output(["git", "status", "--porcelain"], "")),
+            "lp_git_head": source_metadata["git_head"],
+            "lp_worktree_dirty": source_metadata["git_worktree_dirty"],
         },
     }
     args.output.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")

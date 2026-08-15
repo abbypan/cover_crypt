@@ -61,8 +61,8 @@ def create_source(args: argparse.Namespace) -> None:
     manifest = {
         "schema": "lp-covercrypt-timing-source-v1",
         "purpose": (
-            "Archived source snapshot for reproducing and auditing the canonical "
-            "timing artifact; not a historical run-provenance attestation"
+            "Source snapshot captured before the timing runner modifies canonical "
+            "result files; binds the run to its implementation and tool inputs"
         ),
         "git_head": git_output(repo, "rev-parse", "HEAD"),
         "git_worktree_dirty": bool(git_output(repo, "status", "--porcelain")),
