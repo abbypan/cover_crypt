@@ -1,46 +1,101 @@
 {
-  "schema": "lp-covercrypt-timing-results-v1",
-  "purpose": "Checksums binding the canonical timing data to the archived reproduction sources and scripts",
+  "schema": "lp-covercrypt-unified-evaluation-v1",
+  "purpose": "Binds every paper experiment to one final clean LP-Covercrypt commit and to the retained flat benchmark result set",
+  "lp_git_head": "55f5094806c24853b9f912a8202e22177e4868e4",
+  "lp_worktree_dirty": false,
+  "baseline_git_commit": "089a548d4373dd099a57bb1c5219ad0a4cf25fe4",
+  "result_class_revisions": {
+    "corpus_classic": "55f5094806c24853b9f912a8202e22177e4868e4",
+    "corpus_hybridized": "55f5094806c24853b9f912a8202e22177e4868e4",
+    "boolean-cross-build.json": "55f5094806c24853b9f912a8202e22177e4868e4",
+    "key-rights-cross-build.json": "55f5094806c24853b9f912a8202e22177e4868e4",
+    "compatibility-matrix.json": "55f5094806c24853b9f912a8202e22177e4868e4",
+    "compiler-scaling-metadata.json": "55f5094806c24853b9f912a8202e22177e4868e4",
+    "unit-validation-metadata.json": "55f5094806c24853b9f912a8202e22177e4868e4",
+    "controlled_timing": "55f5094806c24853b9f912a8202e22177e4868e4",
+    "timing_source_manifest": "55f5094806c24853b9f912a8202e22177e4868e4"
+  },
+  "all_result_classes_same_clean_revision": true,
   "files": [
     {
-      "path": "benches/artifact_manifest.py",
-      "bytes": 11588,
-      "sha256": "f86000104bfe9b688e331703bb5e19d94ba5ecca6ff194280a9846f17e7e1de5"
+      "path": "benchmark-results/boolean-cross-build.json",
+      "bytes": 5631,
+      "sha256": "2ad936176508df06cf5879ceddfded48572fb1010ba4b54da763d9e0cf1151bb"
     },
     {
-      "path": "benches/cross_version_report.py",
-      "bytes": 14586,
-      "sha256": "722fdee694b743738e9abdb6d193429c77d0144cd1ecdfdd39a0f5ca9076fc5e"
+      "path": "benchmark-results/classic-covercrypt.csv",
+      "bytes": 1090410,
+      "sha256": "19ba91e93c979cb010e9840ef942bcac450bdfbacebe911a594a1870c3002f78"
     },
     {
-      "path": "benches/evaluation_report.py",
-      "bytes": 22728,
-      "sha256": "2355375f5eefee198a31953e3dc766b88ace4fb4c885c3ff25ac7ce9140562f7"
+      "path": "benchmark-results/classic-lp-covercrypt.csv",
+      "bytes": 1021116,
+      "sha256": "5727a0a5615180986d9508b2c2f86786e44725f40ffea8cf29910fb72143946b"
     },
     {
-      "path": "benches/run_all_evaluation.sh",
-      "bytes": 3720,
-      "sha256": "2ade959518cfcf55e52facc81b427ae28571af787e8ac81150c0ce385b43ebe5"
+      "path": "benchmark-results/classic-pairs.csv",
+      "bytes": 1133063,
+      "sha256": "20f128d715b6dd5b76a95af1840f125f133c26f88cd2066cc47fa6953b146105"
     },
     {
-      "path": "benches/run_cross_version_validation.sh",
-      "bytes": 3258,
-      "sha256": "36d2dcef88ccddfb75c4859d599a366f718d9feab4d617d4c6aea1d2b7e04ff2"
+      "path": "benchmark-results/classic-summary.json",
+      "bytes": 3602,
+      "sha256": "afed27b6283d2b609498a2273a3cf5fd64de57680811daf860b819091ebcdea2"
     },
     {
-      "path": "benches/run_evaluation.sh",
-      "bytes": 4149,
-      "sha256": "dc615ad6f63321fdece08e02b05944ad3252d44e5dd92833e5c0f5cf39226b1e"
+      "path": "benchmark-results/classic-summary.stdout.json",
+      "bytes": 3602,
+      "sha256": "afed27b6283d2b609498a2273a3cf5fd64de57680811daf860b819091ebcdea2"
     },
     {
-      "path": "benches/run_timing_batches.sh",
-      "bytes": 4827,
-      "sha256": "2f9c6288084d5af84b10daee5a6e8a734fd5bccf37cfd3340f0a0a5f77bc7b29"
+      "path": "benchmark-results/compatibility-matrix.json",
+      "bytes": 10461,
+      "sha256": "cf2a0c87dd2c9e499c64d3330549b95130567e82158ae6e7a26e01bcdeb6591a"
     },
     {
-      "path": "benches/timing_report.py",
-      "bytes": 14722,
-      "sha256": "2ae1184502b67b5316197f174c8f7ffaeec3746705d4133dc3df39e1089eaacc"
+      "path": "benchmark-results/compiler-scaling-metadata.json",
+      "bytes": 434,
+      "sha256": "f03643735aa79cc5c965c496f43ec2a25821567b001cda33cc481e494f1c32fe"
+    },
+    {
+      "path": "benchmark-results/compiler-scaling.csv",
+      "bytes": 149,
+      "sha256": "12650df3f9aa1c03fc25c7dbf6981cbbb9d2548734a209855ec2af1400aa0ef1"
+    },
+    {
+      "path": "benchmark-results/hybridized-covercrypt.csv",
+      "bytes": 1122329,
+      "sha256": "50ed65f6ed12ab97f8f1236a19f0c3caacdff5f56979f7024c6705a5a1eff609"
+    },
+    {
+      "path": "benchmark-results/hybridized-lp-covercrypt.csv",
+      "bytes": 1052305,
+      "sha256": "fa8983baf205b65944fc0d48afe15b0e2f1da1fee9681929819c69533de99f5b"
+    },
+    {
+      "path": "benchmark-results/hybridized-pairs.csv",
+      "bytes": 1136414,
+      "sha256": "7720a5646ffddf9e56c1e4962ce7187ce0d0aa444c72f0ed171084da455f690e"
+    },
+    {
+      "path": "benchmark-results/hybridized-summary.json",
+      "bytes": 3620,
+      "sha256": "6cd9a6ca74c4171143e6f50c66f0eb67438ece16d1f9bf8af8b9c7235b7610f2"
+    },
+    {
+      "path": "benchmark-results/hybridized-summary.stdout.json",
+      "bytes": 3620,
+      "sha256": "6cd9a6ca74c4171143e6f50c66f0eb67438ece16d1f9bf8af8b9c7235b7610f2"
+    },
+    {
+      "path": "benchmark-results/key-rights-cross-build.json",
+      "bytes": 160137,
+      "sha256": "7321e60c7c2435afd92432f9b5d38265c4ebbfdec2b274e7674633ce9d6edbf7"
+    },
+    {
+      "path": "benchmark-results/timing-artifact-manifest.json",
+      "bytes": 10635,
+      "sha256": "f1d7beb1a217af6ee9400fd5cc86950fed31948a44910d408c1ffb0e16b4be09"
     },
     {
       "path": "benchmark-results/timing-b01-classic-covercrypt.csv",
@@ -273,19 +328,14 @@
       "sha256": "5443c683965b712b72324a0ae41234448b3514dbd78638c22550684b7eddf3e2"
     },
     {
-      "path": "examples/compiler_scaling.rs",
-      "bytes": 2313,
-      "sha256": "34880d02b47a668b56ad9708f685d67c250d0bb0047b210a3d218607e9fb9d50"
+      "path": "benchmark-results/unit-validation-metadata.json",
+      "bytes": 389,
+      "sha256": "78177649922f3922b6f89a6f86ef76f3c5070bbbd1d79055489750cb7ffa5e61"
     },
     {
-      "path": "examples/cross_version_validation.rs",
-      "bytes": 18553,
-      "sha256": "8949e62be3b35836d7cb2e13ad8187c4a46e54055bab24bf0c9681a6d86f9a97"
-    },
-    {
-      "path": "examples/evaluation_benchmark.rs",
-      "bytes": 17190,
-      "sha256": "309bd14f935e36a0f6619a1cca1f156290e02dba3255394bc68ba4bce68cfdb5"
+      "path": "benchmark-results/unit-validation.log",
+      "bytes": 7177,
+      "sha256": "21ea5c85be00b55121c3bdeaceeefc4847e9d38e2937107b7fc2c651fdbcd615"
     }
   ]
 }

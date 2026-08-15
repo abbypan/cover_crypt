@@ -1,6 +1,6 @@
 {
   "baseline_ref": "089a548",
-  "lp_git_head": "2dff4d4d386fa2704488a7ee0cadf21cb5107252",
+  "lp_git_head": "55f5094806c24853b9f912a8202e22177e4868e4",
   "lp_worktree_dirty": false,
   "complete_downward_closed_keys": 36,
   "cases": 14,

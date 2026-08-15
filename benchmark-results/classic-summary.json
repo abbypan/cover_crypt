@@ -72,35 +72,35 @@
   "same_y": {
     "success": {
       "pairs": 860,
-      "lp_us": 1708.59,
-      "covercrypt_us": 1515.97,
-      "reduction_percent": -12.71
+      "lp_us": 996.0,
+      "covercrypt_us": 891.87,
+      "reduction_percent": -11.67
     },
     "failure": {
       "pairs": 1984,
-      "lp_us": 1837.6,
-      "covercrypt_us": 1520.52,
-      "reduction_percent": -20.85
+      "lp_us": 1010.28,
+      "covercrypt_us": 962.74,
+      "reduction_percent": -4.94
     }
   },
   "different_y": {
     "TP_TP": {
       "pairs": 275,
-      "lp_us": 772.37,
-      "covercrypt_us": 2101.16,
-      "reduction_percent": 63.24
+      "lp_us": 484.1,
+      "covercrypt_us": 1170.7,
+      "reduction_percent": 58.65
     },
     "TN_TN": {
       "pairs": 1680,
-      "lp_us": 677.09,
-      "covercrypt_us": 2284.22,
-      "reduction_percent": 70.36
+      "lp_us": 372.45,
+      "covercrypt_us": 1407.36,
+      "reduction_percent": 73.54
     },
     "TN_FP": {
       "pairs": 1442,
-      "lp_us": 831.78,
-      "covercrypt_us": 2042.7,
-      "reduction_percent": 59.28
+      "lp_us": 469.25,
+      "covercrypt_us": 1261.42,
+      "reduction_percent": 62.8
     }
   },
   "v15_native_sensitivity": {
@@ -128,7 +128,7 @@
   "environment": {
     "workers": 12,
     "workers_cpu_pinned": true,
-    "lp_git_head": "2dff4d4d386fa2704488a7ee0cadf21cb5107252",
+    "lp_git_head": "55f5094806c24853b9f912a8202e22177e4868e4",
     "lp_worktree_dirty": false,
     "os": "Linux-7.1.4-arch1-1-x86_64-with-glibc2.43",
     "cpu": "AMD Ryzen 9 5900 12-Core Processor",

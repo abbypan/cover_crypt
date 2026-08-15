@@ -1,7 +1,7 @@
 {
   "schema": "lp-covercrypt-timing-source-v1",
   "purpose": "Source snapshot captured before the timing runner modifies canonical result files; binds the run to its implementation and tool inputs",
-  "git_head": "2dff4d4d386fa2704488a7ee0cadf21cb5107252",
+  "git_head": "55f5094806c24853b9f912a8202e22177e4868e4",
   "git_worktree_dirty": false,
   "baseline_git_commit": "089a548d4373dd099a57bb1c5219ad0a4cf25fe4",
   "files": [
