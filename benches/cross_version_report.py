@@ -4,9 +4,19 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
+import itertools
 import json
 from pathlib import Path
 from typing import Any
+
+
+DIMENSIONS = ("SEC", "DPT", "CTR")
+COORDINATE_VALUES: dict[str, tuple[str | None, ...]] = {
+    "SEC": (None, "LOW", "MED", "HIG", "$"),
+    "DPT": (None, "DEV", "MKG", "$"),
+    "CTR": (None, "EN", "FR", "$"),
+}
 
 
 def load(path: str) -> dict[str, Any]:
@@ -18,6 +28,144 @@ def write(path: str, value: dict[str, Any]) -> None:
     with Path(path).open("w", encoding="utf-8") as stream:
         json.dump(value, stream, indent=2)
         stream.write("\n")
+
+
+def sha256(path: str) -> str:
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def policy_coordinates(source: str) -> dict[str, str | None]:
+    coordinates: dict[str, str | None] = dict.fromkeys(DIMENSIONS)
+    for term in source.split(" && "):
+        dimension, value = term.split("::", 1)
+        if dimension not in coordinates or coordinates[dimension] is not None:
+            raise ValueError(f"invalid normalized key policy: {source}")
+        coordinates[dimension] = value
+    return coordinates
+
+
+def expected_key_coordinates(
+    source: str, *, unrestricted_completion: bool
+) -> set[tuple[str | None, ...]]:
+    policy = policy_coordinates(source)
+    dimension_values = []
+    for dimension in DIMENSIONS:
+        value = policy[dimension]
+        universe = COORDINATE_VALUES[dimension]
+        if value is None:
+            allowed = universe if unrestricted_completion else (None,)
+        elif dimension == "SEC":
+            allowed = universe[: universe.index(value) + 1]
+        elif value == "$":
+            allowed = universe
+        else:
+            allowed = (None, value)
+        dimension_values.append(allowed)
+    return set(itertools.product(*dimension_values))
+
+
+def index_probes(document: dict[str, Any]) -> dict[tuple[str | None, ...], str]:
+    probes: dict[tuple[str | None, ...], str] = {}
+    for row in document["coordinate_probes"]:
+        coordinate = tuple(row["coordinates"][dimension] for dimension in DIMENSIONS)
+        if coordinate in probes:
+            raise ValueError(f"duplicate coordinate probe: {coordinate}")
+        probes[coordinate] = row["encoded_right"]
+    if len(probes) != 80 or len(set(probes.values())) != 80:
+        raise ValueError("coordinate probes do not encode the 80-right universe injectively")
+    return probes
+
+
+def index_keys(document: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    keys = {row["source"]: row for row in document["keys"]}
+    if len(keys) != 79 or len(keys) != len(document["keys"]):
+        raise ValueError("expected 79 distinct normalized key policies")
+    return keys
+
+
+def key_rights_report(
+    baseline_path: str,
+    lp_path: str,
+    rust_generator: str,
+    lp_ref: str,
+    lp_library_dirty: bool,
+) -> dict[str, Any]:
+    baseline = load(baseline_path)
+    lp = load(lp_path)
+    if baseline["variant"] != "covercrypt" or lp["variant"] != "lp-covercrypt":
+        raise ValueError("unexpected key-right result variants")
+    if baseline["scenario"] != "classic" or lp["scenario"] != "classic":
+        raise ValueError("key-right validation must use the Classic encoder")
+
+    baseline_probes = index_probes(baseline)
+    lp_probes = index_probes(lp)
+    if baseline_probes != lp_probes:
+        raise ValueError("the two builds do not share the same coordinate encoding")
+
+    baseline_keys = index_keys(baseline)
+    lp_keys = index_keys(lp)
+    if set(baseline_keys) != set(lp_keys):
+        raise ValueError("normalized key corpus differs across builds")
+
+    rows = []
+    for source in baseline_keys:
+        expected_unrestricted = sorted(
+            baseline_probes[coordinate]
+            for coordinate in expected_key_coordinates(
+                source, unrestricted_completion=True
+            )
+        )
+        expected_lp = sorted(
+            lp_probes[coordinate]
+            for coordinate in expected_key_coordinates(
+                source, unrestricted_completion=False
+            )
+        )
+        actual_baseline = sorted(baseline_keys[source]["encoded_rights"])
+        actual_lp = sorted(lp_keys[source]["encoded_rights"])
+        baseline_equal = actual_baseline == expected_unrestricted
+        lp_equal = actual_lp == expected_lp
+        if not baseline_equal or not lp_equal:
+            raise ValueError(
+                f"encoded key-right equality failed for {source}: "
+                f"covercrypt={baseline_equal}, lp={lp_equal}"
+            )
+        rows.append(
+            {
+                "source": source,
+                "covercrypt_implementation_source": baseline_keys[source][
+                    "implementation_source"
+                ],
+                "lp_implementation_source": lp_keys[source]["implementation_source"],
+                "expected_unrestricted_encoded_rights": expected_unrestricted,
+                "covercrypt_encoded_rights": actual_baseline,
+                "covercrypt_set_equal": baseline_equal,
+                "expected_default_minimal_encoded_rights": expected_lp,
+                "lp_encoded_rights": actual_lp,
+                "lp_set_equal": lp_equal,
+            }
+        )
+
+    return {
+        "baseline_ref": "089a548",
+        "lp_ref": lp_ref,
+        "lp_library_worktree_dirty": lp_library_dirty,
+        "scenario": "classic",
+        "coordinate_universe_rights": len(baseline_probes),
+        "normalized_key_policies": len(rows),
+        "shared_coordinate_encoding": True,
+        "all_covercrypt_sets_equal_independent_unrestricted_model": True,
+        "all_lp_sets_equal_independent_default_minimal_model": True,
+        "generator_files_sha256": {
+            Path(rust_generator).name: sha256(rust_generator),
+            Path(__file__).name: sha256(__file__),
+        },
+        "rows": rows,
+    }
 
 
 def index_cases(document: dict[str, Any]) -> dict[str, dict[str, Any]]:
@@ -175,16 +323,49 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--baseline-boolean", required=True)
     parser.add_argument("--lp-boolean", required=True)
+    parser.add_argument("--baseline-key-rights", required=True)
+    parser.add_argument("--lp-key-rights", required=True)
+    parser.add_argument("--rust-generator", required=True)
+    parser.add_argument("--lp-ref", required=True)
+    parser.add_argument("--lp-library-dirty", choices=("true", "false"), required=True)
     parser.add_argument("--compatibility", nargs="+", required=True)
     parser.add_argument("--boolean-output", required=True)
+    parser.add_argument("--key-rights-output", required=True)
     parser.add_argument("--matrix-output", required=True)
     args = parser.parse_args()
 
     boolean = boolean_report(args.baseline_boolean, args.lp_boolean)
+    key_rights = key_rights_report(
+        args.baseline_key_rights,
+        args.lp_key_rights,
+        args.rust_generator,
+        args.lp_ref,
+        args.lp_library_dirty == "true",
+    )
     matrix = compatibility_report(args.compatibility)
     write(args.boolean_output, boolean)
+    write(args.key_rights_output, key_rights)
     write(args.matrix_output, matrix)
-    print(json.dumps({"boolean": boolean, "compatibility": matrix}, indent=2))
+    print(
+        json.dumps(
+            {
+                "outputs": {
+                    "boolean": args.boolean_output,
+                    "key_rights": args.key_rights_output,
+                    "compatibility": args.matrix_output,
+                },
+                "validated": {
+                    "boolean_preservation_cases": boolean["preservation_cases"],
+                    "encoded_key_sets": key_rights["normalized_key_policies"],
+                    "coordinate_universe_rights": key_rights[
+                        "coordinate_universe_rights"
+                    ],
+                    "compatibility_rows": matrix["rows"],
+                },
+            },
+            indent=2,
+        )
+    )
 
 
 if __name__ == "__main__":

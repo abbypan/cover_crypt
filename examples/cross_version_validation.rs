@@ -129,6 +129,94 @@ fn complete_key_policies() -> Vec<String> {
     policies
 }
 
+fn paper_policy_corpus(include_broadcast: bool) -> Vec<([Option<&'static str>; 3], String)> {
+    let mut policies = Vec::new();
+    for sec in [None, Some("LOW"), Some("MED"), Some("HIG"), Some(MAXIMUM)] {
+        for dpt in [None, Some("DEV"), Some("MKG"), Some(MAXIMUM)] {
+            for ctr in [None, Some("EN"), Some("FR"), Some(MAXIMUM)] {
+                let coordinates = [sec, dpt, ctr];
+                let terms = ["SEC", "DPT", "CTR"]
+                    .iter()
+                    .zip(coordinates)
+                    .filter_map(|(dimension, value)| {
+                        value.map(|value| format!("{dimension}::{value}"))
+                    })
+                    .collect::<Vec<_>>();
+                if terms.is_empty() {
+                    if include_broadcast {
+                        policies.push((coordinates, "*".to_string()));
+                    }
+                } else {
+                    policies.push((coordinates, terms.join(" && ")));
+                }
+            }
+        }
+    }
+    policies
+}
+
+fn run_key_rights(variant: &str, output: &Path) -> Result<(), Box<dyn std::error::Error>> {
+    let structure = create_structure(Scenario::Classic)?;
+
+    let mut probes = Vec::new();
+    for (coordinates, source) in paper_policy_corpus(true) {
+        let policy = AccessPolicy::parse(&source)?;
+        let rights = structure.ap_to_enc_rights(&policy)?;
+        if rights.len() != 1 {
+            return Err(format!(
+                "coordinate probe {source} produced {} rights instead of one",
+                rights.len()
+            )
+            .into());
+        }
+        probes.push(json!({
+            "coordinates": {
+                "SEC": coordinates[0],
+                "DPT": coordinates[1],
+                "CTR": coordinates[2],
+            },
+            "source": source,
+            "encoded_right": bytes_hex(rights.iter().next().expect("one right")),
+        }));
+    }
+
+    let mut keys = Vec::new();
+    for (_, source) in paper_policy_corpus(false) {
+        let implementation = implementation_key_policy(variant, &source);
+        let policy = AccessPolicy::parse(&implementation)?;
+        let mut encoded_rights = structure
+            .ap_to_usk_rights(&policy)?
+            .iter()
+            .map(|right| bytes_hex(right))
+            .collect::<Vec<_>>();
+        encoded_rights.sort_unstable();
+        keys.push(json!({
+            "source": source,
+            "implementation_source": implementation,
+            "encoded_rights": encoded_rights,
+        }));
+    }
+
+    if probes.len() != 80 || keys.len() != 79 {
+        return Err(format!(
+            "unexpected corpus size: {} coordinate probes and {} keys",
+            probes.len(),
+            keys.len()
+        )
+        .into());
+    }
+
+    write_json(
+        output,
+        &json!({
+            "variant": variant,
+            "scenario": "classic",
+            "coordinate_probes": probes,
+            "keys": keys,
+        }),
+    )
+}
+
 fn run_boolean(variant: &str, output: &Path) -> Result<(), Box<dyn std::error::Error>> {
     let structure = create_structure(Scenario::Classic)?;
     let key_policies = complete_key_policies();
@@ -420,6 +508,11 @@ fn main() {
                 let variant = require_arg(&mut args, "variant")?;
                 let output = PathBuf::from(require_arg(&mut args, "output")?);
                 run_boolean(&variant, &output)
+            }
+            "key-rights" => {
+                let variant = require_arg(&mut args, "variant")?;
+                let output = PathBuf::from(require_arg(&mut args, "output")?);
+                run_key_rights(&variant, &output)
             }
             "produce" => {
                 let variant = require_arg(&mut args, "variant")?;

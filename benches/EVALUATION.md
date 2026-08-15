@@ -26,7 +26,10 @@ checkout and the LP tree. Its Boolean report checks 14 focused cases against 36
 complete downward-closed keys: all 360 decisions in the ten preservation cases
 must agree, even when canonical ciphertext rights differ. Repeated hierarchy
 normalization and incomparable-anarchy rejection are recorded as intentional
-language changes rather than compatibility claims.
+language changes rather than compatibility claims. Its key-right report also
+enumerates the complete 80-right coordinate universe and requires exact set
+equality for every normalized key: v15 plus the key adapter against independent
+unrestricted completion, and LP against independent default-minimal semantics.
 
 Run the complete experiment from the repository root:
 
@@ -146,6 +149,8 @@ Generated files:
   provenance;
 - `boolean-cross-build.json`: shared-domain authorization comparison and
   explicitly classified language changes;
+- `key-rights-cross-build.json`: exact encoded-set comparisons for all 79
+  normalized keys against independent unrestricted and default-minimal models;
 - `compatibility-matrix.json`: all eight producer-consumer rows. Cross-version
   V1/V2 AccessStructure, MSK, and MPK loading is rejected; USK and PKE
   ciphertext wire objects remain usable in their original MSK domain. A legacy

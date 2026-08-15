@@ -84,8 +84,10 @@ five dimensions; the release example reports the corresponding compiler cost.
 The polarity test makes the two uses of `D::$` explicit: it is a full lower-set
 grant in a key policy and a single maximum-coordinate requirement in a
 ciphertext policy. The cross-version runner builds clean public v15 and LP
-binaries, compares focused Boolean authorization decisions, and executes the
-Classic/Hybridized producer-consumer compatibility matrix.
+binaries. It checks every actual key-right set in the 79-policy corpus against
+an independently selected set over all 80 encoded coordinate rights, compares
+focused Boolean authorization decisions, and executes the Classic/Hybridized
+producer-consumer compatibility matrix.
 
 ## Quick smoke test
 
@@ -279,16 +281,18 @@ one clean-revision run:
 | Compiler scaling CSV | Archived at `103a739`; no separate run-time revision attestation |
 | Controlled timing | Run recorded at dirty HEAD `103a739`; post-run source snapshot matches tracked files at `4471592` plus the archived `Cargo.lock` |
 | Boolean differential and compatibility matrix | Data and generators archived at `4471592` |
+| 79-key encoded-right-set validation | Output records both revisions, LP-library worktree status, and SHA-256 hashes of both generators |
 | 144-policy unit validation | Clean source commit `af288f9` |
 
 Classic and Hybridized timing results are interpreted separately; no result
 pools the scenarios.
 
-The cross-build validation writes two additional top-level files:
+The cross-build validation writes three additional top-level files:
 
 | File | Contents |
 | --- | --- |
 | `boolean-cross-build.json` | Fourteen focused v15/LP Boolean cases over 36 complete downward-closed keys |
+| `key-rights-cross-build.json` | Exact v15/unrestricted and LP/default-minimal encoded-set equalities for all 79 normalized keys over the 80-right universe |
 | `compatibility-matrix.json` | Eight Classic/Hybridized v15/LP producer-consumer rows for stateful and wire objects |
 
 The timing experiment also writes only top-level files in
@@ -320,7 +324,7 @@ silently narrow its authority.
 - [`benches/artifact_manifest.py`](benches/artifact_manifest.py): exact-source
   and timing-result checksum creation and verification;
 - [`examples/cross_version_validation.rs`](examples/cross_version_validation.rs):
-  common v15/LP Boolean and serialization test program;
+  common v15/LP key-right, Boolean, and serialization test program;
 - [`benches/run_cross_version_validation.sh`](benches/run_cross_version_validation.sh):
   clean cross-build and compatibility-matrix driver;
 - [`benches/cross_version_report.py`](benches/cross_version_report.py): strict
