@@ -8,8 +8,9 @@ paper. The benchmark compares:
 
 The same benchmark source is compiled against both implementations. The runner
 measures authorization outcomes, compiled user rights, serialized user-key and
-PKE ciphertext sizes, and end-to-end PKE decryption latency. It does not run
-the Criterion microbenchmarks in `benches/benches.rs`.
+PKE ciphertext sizes, and controlled `PkeAc::decrypt` call latency on prebuilt
+inputs. It does not run the Criterion microbenchmarks in
+`benches/benches.rs`.
 
 ## Experiment design
 
@@ -30,6 +31,9 @@ Two scenarios are measured independently:
 - **Classic**: all non-bottom rights use the Ristretto25519-based component;
 - **Hybridized**: all non-bottom rights additionally use ML-KEM-512.
 
+These are uniform-mode scenarios. Mixed per-attribute Classic/Hybridized
+structures are not evaluated.
+
 The full $79\times79$ corpus supplies authorization, compiled-right, and
 serialized-size results.  Decryption timing uses a fixed, seeded stratified
 sample: 20 pairs from each of the two Same-Y and three Diff-Y outcome strata
@@ -40,6 +44,10 @@ in five batches per scenario.  Batch observations and all raw pair means are
 retained for paired 95% Student-t confidence intervals.
 The intervals describe this fixed sample and host; consecutive batches can
 remain temporally correlated and are not evidence for arbitrary deployments.
+The timed region excludes parsing, normalization, policy compilation, key
+generation, encryption, serialization, I/O, setup, update, and rotation; the
+results are therefore decrypt-call measurements, not end-to-end deployment
+latency.
 
 ## Requirements
 
@@ -81,7 +89,7 @@ The first command compares exact ciphertext/key right sets and all 20,736
 authorization decisions for 144 policies covering disjunction, DNF expansion,
 deduplication, subsumption, repeated hierarchical values, explicit maxima, and
 mixed broadcast. It also checks rejection of unknown names and incompatible
-anarchic conjunctions. The second checks the
+anarchic conjunctions. The third command checks the
 predicted Cartesian-product growth on synthetic structures with two through
 five dimensions; the release example reports the corresponding compiler cost.
 The polarity test makes the two uses of `D::$` explicit: it is a full lower-set
@@ -193,6 +201,37 @@ source-policy oracle, or if the corpus does not have the expected structure:
 | Diff-Y: LP TP / Covercrypt TP | 275 |
 | Diff-Y: LP TN / Covercrypt TN | 1,680 |
 | Diff-Y: LP TN / Covercrypt FP | 1,442 |
+
+## Canonical paper snapshot
+
+The checked-in paper snapshot compares baseline commit
+`089a548d4373dd099a57bb1c5219ad0a4cf25fe4` with clean LP source commit
+`55f5094806c24853b9f912a8202e22177e4868e4`. The generated files may be stored
+in a later results-only commit; the tested source revision is the one embedded
+in the summaries and manifests. The unified manifest must report
+`all_result_classes_same_clean_revision: true`.
+
+The main comparator is `CC+T`, not an unchanged stock-v15 deployment. Both
+builds use the same 80-right universe with a registered `$` in every dimension.
+On the v15 key path only, adapter `T` expands an anarchic `D::$` into `$` plus
+all concrete values; it is the identity on token-free policies. Stock-v15 key,
+setup, MSK, and MPK sizes without registered maxima are not measured.
+
+The expected aggregates for each Classic or Hybridized 6,241-pair corpus are:
+
+| Metric | `CC+T` | LP-Covercrypt |
+| --- | ---: | ---: |
+| Oracle-relative TP / FP / TN / FN | 1,135 / 1,442 / 3,664 / 0 | 1,135 / 0 / 5,106 / 0 |
+| Oracle-relative precision | 44.04% | 100% |
+| Mean compiled user rights, 79 policies | 33.62 | 15.37 |
+| Mean Classic USK bytes, 79 policies | 1,409.08 | 728.19 |
+| Mean Hybridized USK bytes, 79 policies | 54,645.33 | 24,175.28 |
+| Mean Classic / Hybridized PKE bytes, 79 policies | 178 / 946 | 178 / 946 |
+
+These are synthetic-corpus results. They do not estimate real-world omission
+prevalence, and the USK reductions do not include the unmeasured expansion of
+setup, MSK, or MPK state. Controlled latency values and nominal confidence
+intervals are retained in `timing-summary.json`.
 
 ## Results
 
@@ -313,7 +352,7 @@ silently narrow its authority.
 - [`benches/timing_report.py`](benches/timing_report.py): seeded sample
   selection, raw-batch validation, and paired confidence intervals;
 - [`benches/artifact_manifest.py`](benches/artifact_manifest.py): exact-source
-  and timing-result checksum creation and verification;
+  and unified-result checksum creation and verification;
 - [`examples/cross_version_validation.rs`](examples/cross_version_validation.rs):
   common v15/LP key-right, Boolean, and serialization test program;
 - [`benches/run_cross_version_validation.sh`](benches/run_cross_version_validation.sh):
