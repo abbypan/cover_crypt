@@ -55,7 +55,7 @@ Run the benchmark on Linux from the repository root. The following commands
 must be available:
 
 - `bash`, `git`, `tar`, and standard GNU command-line utilities;
-- Rust and Cargo (the paper used Rust 1.97.1 and Cargo 1.97.1);
+- Rust and Cargo (the paper used Rust 1.98.1 and Cargo 1.98.1);
 - Python 3;
 - `taskset` and `nproc` when CPU pinning is enabled.
 
@@ -206,7 +206,7 @@ source-policy oracle, or if the corpus does not have the expected structure:
 
 The checked-in paper snapshot compares baseline commit
 `089a548d4373dd099a57bb1c5219ad0a4cf25fe4` with clean LP source commit
-`55f5094806c24853b9f912a8202e22177e4868e4`. The generated files may be stored
+`2b804d58199e016a8dd07ffced0d0add55421eb7`. The generated files may be stored
 in a later results-only commit; the tested source revision is the one embedded
 in the summaries and manifests. The unified manifest must report
 `all_result_classes_same_clean_revision: true`.
