@@ -1,7 +1,7 @@
 {
   "baseline_ref": "089a548",
-  "lp_ref": "55f5094806c24853b9f912a8202e22177e4868e4",
-  "lp_git_head": "55f5094806c24853b9f912a8202e22177e4868e4",
+  "lp_ref": "2b804d58199e016a8dd07ffced0d0add55421eb7",
+  "lp_git_head": "2b804d58199e016a8dd07ffced0d0add55421eb7",
   "lp_worktree_dirty": false,
   "scenario": "classic",
   "coordinate_universe_rights": 80,

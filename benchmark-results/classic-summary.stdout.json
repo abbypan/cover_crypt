@@ -72,35 +72,35 @@
   "same_y": {
     "success": {
       "pairs": 860,
-      "lp_us": 996.0,
-      "covercrypt_us": 891.87,
-      "reduction_percent": -11.67
+      "lp_us": 884.91,
+      "covercrypt_us": 826.78,
+      "reduction_percent": -7.03
     },
     "failure": {
       "pairs": 1984,
-      "lp_us": 1010.28,
-      "covercrypt_us": 962.74,
-      "reduction_percent": -4.94
+      "lp_us": 899.22,
+      "covercrypt_us": 842.46,
+      "reduction_percent": -6.74
     }
   },
   "different_y": {
     "TP_TP": {
       "pairs": 275,
-      "lp_us": 484.1,
-      "covercrypt_us": 1170.7,
-      "reduction_percent": 58.65
+      "lp_us": 396.18,
+      "covercrypt_us": 1125.45,
+      "reduction_percent": 64.8
     },
     "TN_TN": {
       "pairs": 1680,
-      "lp_us": 372.45,
-      "covercrypt_us": 1407.36,
-      "reduction_percent": 73.54
+      "lp_us": 327.28,
+      "covercrypt_us": 1235.69,
+      "reduction_percent": 73.51
     },
     "TN_FP": {
       "pairs": 1442,
-      "lp_us": 469.25,
-      "covercrypt_us": 1261.42,
-      "reduction_percent": 62.8
+      "lp_us": 411.26,
+      "covercrypt_us": 1124.73,
+      "reduction_percent": 63.43
     }
   },
   "v15_native_sensitivity": {
@@ -128,12 +128,12 @@
   "environment": {
     "workers": 12,
     "workers_cpu_pinned": true,
-    "lp_git_head": "55f5094806c24853b9f912a8202e22177e4868e4",
+    "lp_git_head": "2b804d58199e016a8dd07ffced0d0add55421eb7",
     "lp_worktree_dirty": false,
-    "os": "Linux-7.1.4-arch1-1-x86_64-with-glibc2.43",
+    "os": "Linux-7.2.3-arch1-2-x86_64-with-glibc2.44",
     "cpu": "AMD Ryzen 9 5900 12-Core Processor",
     "memory_gib": 62.7,
-    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14) (Arch Linux rust 1:1.97.1-1)",
-    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30) (Arch Linux rust 1:1.97.1-1)"
+    "rustc": "rustc 1.98.1 (48a229cea 2026-09-01) (Arch Linux rust 1:1.98.1-1)",
+    "cargo": "cargo 1.98.1 (797e8a9bc 2026-08-05) (Arch Linux rust 1:1.98.1-1)"
   }
 }

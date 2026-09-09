@@ -2,11 +2,11 @@
   "schema": "lp-covercrypt-evaluation-stage-v1",
   "stage": "compiler-scaling",
   "command": "cargo run --quiet --offline --locked --release --example compiler_scaling",
-  "lp_git_head": "55f5094806c24853b9f912a8202e22177e4868e4",
+  "lp_git_head": "2b804d58199e016a8dd07ffced0d0add55421eb7",
   "lp_worktree_dirty": false,
   "file": {
     "path": "benchmark-results/compiler-scaling.csv",
-    "bytes": 149,
-    "sha256": "12650df3f9aa1c03fc25c7dbf6981cbbb9d2548734a209855ec2af1400aa0ef1"
+    "bytes": 148,
+    "sha256": "abaf2eb06eb0e0d920269ea641973bf831f922f6d4f2437ac3040297a02fd927"
   }
 }

@@ -1,7 +1,7 @@
 {
   "schema": "lp-covercrypt-timing-source-v1",
   "purpose": "Source snapshot captured before the timing runner modifies canonical result files; binds the run to its implementation and tool inputs",
-  "git_head": "55f5094806c24853b9f912a8202e22177e4868e4",
+  "git_head": "2b804d58199e016a8dd07ffced0d0add55421eb7",
   "git_worktree_dirty": false,
   "baseline_git_commit": "089a548d4373dd099a57bb1c5219ad0a4cf25fe4",
   "files": [
@@ -72,23 +72,23 @@
     },
     {
       "path": "src/abe_policy/access_policy.rs",
-      "bytes": 10875,
-      "sha256": "65366ddb6f905795049e84559b2d5b688b4efa1a3340e551c370fe99ca9fa73b"
+      "bytes": 11049,
+      "sha256": "dcdb49d755af7754272266939ef4dd74bb674ffcec340e7fe80eb5c5c092b9e7"
     },
     {
       "path": "src/abe_policy/access_structure.rs",
-      "bytes": 44962,
-      "sha256": "3def67c05671ef2c560f36b3d631efbbf1fe08afab0b556a0e3e5a2aaeacd9c5"
+      "bytes": 52296,
+      "sha256": "9957c0a8c2a851f97cc7212ab3643cbae3ea531ceaa0a01be9804c0a6f65dbb8"
     },
     {
       "path": "src/abe_policy/attribute.rs",
-      "bytes": 3836,
-      "sha256": "a3fe886fa2d60643b91e939698a482ad382d38146643b740918a5e7f38d6d443"
+      "bytes": 4076,
+      "sha256": "cccf8ece32b50374c8fa7191a5e1f2a5222e37b588fea86a43ac64e010f011eb"
     },
     {
       "path": "src/abe_policy/dimension.rs",
-      "bytes": 21882,
-      "sha256": "615caf0dd019ec04487aaa73ec68b61c929c000d9db32024ba930571f0a67fe8"
+      "bytes": 22086,
+      "sha256": "e8a9702739a95c44d9c82cb6f99cf1afa3e9f71130d5fb1b2fae4eaf497385b3"
     },
     {
       "path": "src/abe_policy/mod.rs",
