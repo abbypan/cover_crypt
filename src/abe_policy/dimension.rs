@@ -12,10 +12,11 @@ type Name = String;
 
 pub(crate) const MAX_ATTRIBUTE_NAME: &str = "$";
 
+/// Validates stored names and trimmed source names against the same delimiters.
 pub(crate) fn validate_ordinary_name(name: &str) -> Result<(), Error> {
     if name.is_empty()
         || name.trim() != name
-        || ["&&", "||", "::", MAX_ATTRIBUTE_NAME, "(", ")", "*"]
+        || ["&", "|", ":", MAX_ATTRIBUTE_NAME, "(", ")", "*"]
             .iter()
             .any(|reserved| name.contains(reserved))
     {
@@ -223,7 +224,9 @@ impl Dimension {
 
     /// Normalizes the conjunction of two attributes from this dimension.
     /// Comparable attributes reduce to the stronger one; incomparable anarchic
-    /// attributes make the conjunction invalid.
+    /// attributes make the conjunction invalid. Whole-clause validation must
+    /// check concrete anarchic values before reductions can hide them behind a
+    /// maximum.
     pub(crate) fn conjunct(&self, lhs: &str, rhs: &str) -> Result<String, Error> {
         if self.dominates(Some(lhs), Some(rhs))? {
             Ok(lhs.to_string())

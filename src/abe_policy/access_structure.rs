@@ -8,7 +8,10 @@ use crate::{
     Error,
 };
 
-use super::{dimension::validate_ordinary_name, Version};
+use super::{
+    dimension::{validate_ordinary_name, MAX_ATTRIBUTE_NAME},
+    Version,
+};
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct AccessStructure {
@@ -233,6 +236,7 @@ impl AccessStructure {
         clause: &[QualifiedAttribute],
     ) -> Result<Vec<QualifiedAttribute>, Error> {
         let mut normalized = HashMap::<String, String>::with_capacity(clause.len());
+        let mut anarchic_concrete_values = HashMap::<&str, &str>::new();
 
         for attribute in clause {
             let dimension = self
@@ -242,6 +246,20 @@ impl AccessStructure {
             dimension
                 .get_attribute(&attribute.name)
                 .ok_or_else(|| Error::AttributeNotFound(attribute.to_string()))?;
+
+            // Keep original concrete values separate from the reduced value:
+            // a maximum must not mask a conflict later in the same clause.
+            if !dimension.is_ordered() && attribute.name != MAX_ATTRIBUTE_NAME {
+                let previous = anarchic_concrete_values
+                    .entry(attribute.dimension.as_str())
+                    .or_insert(attribute.name.as_str());
+                if *previous != attribute.name.as_str() {
+                    return Err(Error::InvalidBooleanExpression(format!(
+                        "invalid conjunction in dimension '{}': mutually exclusive attributes '{}' and '{}' cannot be conjoined",
+                        attribute.dimension, previous, attribute.name
+                    )));
+                }
+            }
 
             match normalized.entry(attribute.dimension.clone()) {
                 Entry::Vacant(entry) => {
@@ -535,7 +553,7 @@ mod serialization {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::abe_policy::{dimension::MAX_ATTRIBUTE_NAME, gen_structure};
+    use crate::abe_policy::gen_structure;
 
     #[test]
     fn test_combine() {
@@ -835,6 +853,171 @@ mod tests {
 
         assert!(structure.ap_to_usk_rights(&invalid).is_err());
         assert!(structure.ap_to_enc_rights(&invalid).is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn test_validation_regression_anarchic_conflicts_ignore_term_order() -> Result<(), Error> {
+        let mut structure = AccessStructure::new();
+        structure.add_anarchy("DPT".to_string())?;
+        for name in ["DEV", "MKG"] {
+            structure.add_attribute(
+                QualifiedAttribute::new("DPT", name),
+                EncryptionHint::Classic,
+                None,
+            )?;
+        }
+
+        // An explicit maximum must not hide incompatible concrete attributes.
+        for terms in [
+            ["DPT::DEV", "DPT::MKG", "DPT::$"],
+            ["DPT::DEV", "DPT::$", "DPT::MKG"],
+            ["DPT::MKG", "DPT::DEV", "DPT::$"],
+            ["DPT::MKG", "DPT::$", "DPT::DEV"],
+            ["DPT::$", "DPT::DEV", "DPT::MKG"],
+            ["DPT::$", "DPT::MKG", "DPT::DEV"],
+        ] {
+            let clause = terms.join(" && ");
+            for source in [
+                clause.clone(),
+                format!("({clause}) || *"),
+                format!("* || ({clause})"),
+                format!("({} || *) && {} && {}", terms[0], terms[1], terms[2]),
+            ] {
+                let policy = AccessPolicy::parse(&source)?;
+                assert!(
+                    matches!(
+                        structure.ap_to_enc_rights(&policy),
+                        Err(Error::InvalidBooleanExpression(_))
+                    ),
+                    "ciphertext accepted {source}"
+                );
+                assert!(
+                    matches!(
+                        structure.ap_to_usk_rights(&policy),
+                        Err(Error::InvalidBooleanExpression(_))
+                    ),
+                    "key accepted {source}"
+                );
+            }
+        }
+
+        // One concrete value (possibly repeated) can still accompany a maximum.
+        let maximum = AccessPolicy::parse("DPT::$")?;
+        for source in [
+            "DPT::$ && DPT::DEV && DPT::DEV",
+            "DPT::DEV && DPT::$ && DPT::DEV",
+            "DPT::DEV && DPT::DEV && DPT::$",
+        ] {
+            let policy = AccessPolicy::parse(source)?;
+            assert_eq!(
+                structure.ap_to_enc_rights(&policy)?,
+                structure.ap_to_enc_rights(&maximum)?,
+                "{source}"
+            );
+            assert_eq!(
+                structure.ap_to_usk_rights(&policy)?,
+                structure.ap_to_usk_rights(&maximum)?,
+                "{source}"
+            );
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn test_validation_regression_names_share_one_rule() -> Result<(), Error> {
+        let mut structure = AccessStructure::new();
+        structure.add_anarchy("D".to_string())?;
+        let ordinary = QualifiedAttribute::new("D", "A");
+        structure.add_attribute(ordinary.clone(), EncryptionHint::Classic, None)?;
+
+        for name in ["R&D", "R|D", "R:D", "R$D", "R*D", "R(D", "R)D", "", " "] {
+            assert!(structure.add_anarchy(name.to_string()).is_err(), "{name}");
+            assert!(structure.add_hierarchy(name.to_string()).is_err(), "{name}");
+            assert!(
+                structure
+                    .add_attribute(
+                        QualifiedAttribute::new("D", name),
+                        EncryptionHint::Classic,
+                        None,
+                    )
+                    .is_err(),
+                "{name}"
+            );
+            assert!(
+                structure
+                    .rename_attribute(&ordinary, name.to_string())
+                    .is_err(),
+                "{name}"
+            );
+            for source in [format!("{name}::A"), format!("D::{name}")] {
+                assert!(
+                    QualifiedAttribute::try_from(source.as_str()).is_err(),
+                    "{source}"
+                );
+                assert!(AccessPolicy::parse(&source).is_err(), "{source}");
+            }
+        }
+
+        assert_eq!(
+            AccessPolicy::parse(" D :: $ ")?,
+            AccessPolicy::parse("D::$")?
+        );
+        assert!(AccessPolicy::parse("$::A").is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn test_validation_regression_valid_names_round_trip() -> Result<(), Error> {
+        use cosmian_crypto_core::bytes_ser_de::Serializable;
+
+        for name in ["R-D", "R_D", "R.D", "Research and Development", "部门"] {
+            let mut structure = AccessStructure::new();
+            structure.add_anarchy(name.to_string())?;
+            let attribute = QualifiedAttribute::new(name, name);
+            structure.add_attribute(attribute.clone(), EncryptionHint::Classic, None)?;
+            let policy = AccessPolicy::parse(&format!("  {name} :: {name}  "))?;
+            assert_eq!(policy, AccessPolicy::Term(attribute));
+
+            let restored = AccessStructure::deserialize(&structure.serialize()?)?;
+            assert_eq!(restored, structure);
+            let x = restored.ap_to_enc_rights(&policy)?;
+            let y = restored.ap_to_usk_rights(&policy)?;
+            assert_eq!(x.len(), 1);
+            assert_eq!(y.len(), 2);
+            assert!(!x.is_disjoint(&y));
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn test_validation_regression_delimiters_rejected_on_load() -> Result<(), Error> {
+        use cosmian_crypto_core::bytes_ser_de::Serializable;
+
+        let mut valid = AccessStructure::new();
+        valid.add_anarchy("D".to_string())?;
+        valid.add_attribute(
+            QualifiedAttribute::new("D", "A"),
+            EncryptionHint::Classic,
+            None,
+        )?;
+        for name in ["R&D", "R|D", "R:D"] {
+            // Construct old or externally supplied state that bypassed name
+            // validation; neither dimension nor attribute names may survive load.
+            let mut bad_dimension = valid.clone();
+            let dimension = bad_dimension.dimensions.remove("D").unwrap();
+            bad_dimension.dimensions.insert(name.to_string(), dimension);
+            assert!(AccessStructure::deserialize(&bad_dimension.serialize()?).is_err());
+
+            let mut bad_attribute = valid.clone();
+            let Dimension::Anarchy(attributes) = bad_attribute.dimensions.get_mut("D").unwrap()
+            else {
+                unreachable!()
+            };
+            let attribute = attributes.remove("A").unwrap();
+            attributes.insert(name.to_string(), attribute);
+            assert!(AccessStructure::deserialize(&bad_attribute.serialize()?).is_err());
+        }
         Ok(())
     }
 

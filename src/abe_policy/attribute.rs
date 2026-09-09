@@ -4,6 +4,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::Error;
 
+use super::dimension::{validate_ordinary_name, MAX_ATTRIBUTE_NAME};
+
 /// Hint the user about which kind of encryption to use.
 #[derive(Copy, Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum EncryptionHint {
@@ -137,12 +139,15 @@ impl TryFrom<&str> for QualifiedAttribute {
             )));
         }
 
-        if dimension.is_empty() || component.is_empty() {
-            return Err(Error::InvalidAttribute(format!(
-                "empty dimension or empty name in {s}"
-            )));
+        let dimension = dimension.trim();
+        let component = component.trim();
+        validate_ordinary_name(dimension)
+            .map_err(|error| Error::InvalidAttribute(error.to_string()))?;
+        if component != MAX_ATTRIBUTE_NAME {
+            validate_ordinary_name(component)
+                .map_err(|error| Error::InvalidAttribute(error.to_string()))?;
         }
 
-        Ok(Self::new(dimension.trim(), component.trim()))
+        Ok(Self::new(dimension, component))
     }
 }

@@ -53,17 +53,20 @@ impl AccessPolicy {
     ///
     /// - access_policy: operand [ operator access_policy ]
     /// - operand: attribute | group | broadcast
-    /// - attribute: dimension [ separator component ]
+    /// - attribute: dimension separator component
     /// - group: ( access_policy )
     /// - broadcast: *
     /// - operator: OR | AND
     /// - OR: ||
     /// - AND: &&
     /// - separator: ::
-    /// - dimension: /[^()&|:]+/
-    /// - component: /[^()&|:]+/
+    /// - dimension: name
+    /// - component: name | '$'
+    /// - name: /[^()&|:$*]+/
     ///
-    /// Leading and trailing spaces are trimmed; internal spaces are retained.
+    /// Names must be nonempty after trimming. Leading and trailing spaces are
+    /// trimmed; internal spaces are retained. The same name rule applies to
+    /// stored dimensions and ordinary attributes, without surrounding spaces.
     ///
     /// # Precedence rule
     ///
