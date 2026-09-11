@@ -2,11 +2,11 @@
   "schema": "lp-covercrypt-evaluation-stage-v1",
   "stage": "unit-validation",
   "command": "cargo test --offline --locked",
-  "lp_git_head": "2b804d58199e016a8dd07ffced0d0add55421eb7",
+  "lp_git_head": "9dadc7d62b7fc2b8992482c36ea1a60493e3ef8e",
   "lp_worktree_dirty": false,
   "file": {
     "path": "benchmark-results/unit-validation.log",
-    "bytes": 7590,
-    "sha256": "130d35822c90f4aaa00e992de67876b346cd4f0de67cdf68497744a1eb714827"
+    "bytes": 8167,
+    "sha256": "a81f7636eeca44519abd1e01028b5761545ffb9a4920766af537e91ca2891146"
   }
 }
