@@ -317,4 +317,82 @@ mod tests {
         let res = cc.decaps(&usk, &bc).unwrap();
         assert_eq!(Some(secret), res);
     }
+
+    fn check_retired_ids_do_not_authorize_replacements(
+        remove_dimension: bool,
+    ) -> Result<(), Error> {
+        use cosmian_crypto_core::bytes_ser_de::Serializable;
+
+        for hint in [EncryptionHint::Classic, EncryptionHint::Hybridized] {
+            for update_after_removal in [false, true] {
+                for reload in [false, true] {
+                    for keep_old_secrets in [false, true] {
+                        let cc = Covercrypt::default();
+                        let (mut msk, _) = cc.setup()?;
+                        msk.access_structure.add_anarchy("OLD_DIM".to_string())?;
+                        let old_attribute = QualifiedAttribute::new("OLD_DIM", "OLD");
+                        msk.access_structure
+                            .add_attribute(old_attribute.clone(), hint, None)?;
+                        cc.update_msk(&mut msk)?;
+                        let old_policy = AccessPolicy::parse("OLD_DIM::OLD")?;
+                        let old_rights = msk.access_structure.ap_to_enc_rights(&old_policy)?;
+                        let mut old_key = cc.generate_user_secret_key(&mut msk, &old_policy)?;
+
+                        if remove_dimension {
+                            msk.access_structure.del_dimension("OLD_DIM")?;
+                        } else {
+                            msk.access_structure.del_attribute(&old_attribute)?;
+                        }
+                        if update_after_removal {
+                            cc.update_msk(&mut msk)?;
+                        }
+                        if reload {
+                            msk = MasterSecretKey::deserialize(&msk.serialize()?)?;
+                        }
+                        let new_dimension = if remove_dimension {
+                            msk.access_structure.add_anarchy("NEW_DIM".to_string())?;
+                            "NEW_DIM"
+                        } else {
+                            "OLD_DIM"
+                        };
+                        msk.access_structure.add_attribute(
+                            QualifiedAttribute::new(new_dimension, "NEW"),
+                            hint,
+                            None,
+                        )?;
+                        let mpk = cc.update_msk(&mut msk)?;
+                        let new_policy = AccessPolicy::parse(&format!("{new_dimension}::NEW"))?;
+                        let new_rights = msk.access_structure.ap_to_enc_rights(&new_policy)?;
+                        assert!(old_rights.is_disjoint(&new_rights));
+                        let (secret, encapsulation) = cc.encaps(&mpk, &new_policy)?;
+                        assert!(cc.decaps(&old_key, &encapsulation)?.is_none());
+                        let refresh = cc.refresh_usk(&mut msk, &mut old_key, keep_old_secrets);
+                        if keep_old_secrets {
+                            // The history-preserving path drops retired rights.
+                            refresh?;
+                            assert!(cc.decaps(&old_key, &encapsulation)?.is_none());
+                        } else {
+                            // The latest-only core rejects a retired right;
+                            // it must not find a replacement under a reused ID.
+                            assert!(matches!(refresh, Err(Error::KeyError(_))));
+                        }
+
+                        let new_key = cc.generate_user_secret_key(&mut msk, &new_policy)?;
+                        assert_eq!(cc.decaps(&new_key, &encapsulation)?, Some(secret));
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn test_retired_attribute_id_cannot_authorize_replacement() -> Result<(), Error> {
+        check_retired_ids_do_not_authorize_replacements(false)
+    }
+
+    #[test]
+    fn test_retired_dimension_ids_cannot_authorize_replacement() -> Result<(), Error> {
+        check_retired_ids_do_not_authorize_replacements(true)
+    }
 }

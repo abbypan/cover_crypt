@@ -179,6 +179,34 @@ digest, pinning, order balance, and confidence-interval design. Its pre-run
 source manifest also records the full baseline commit and hashes the common
 tracked lockfile used by both builds.
 
+## Access-structure format and lifecycle validation
+
+LP-Covercrypt uses access-structure format V2. A persistent monotone
+allocation watermark prevents deleted attribute IDs, including dimension maxima,
+from being reassigned along one non-rollback history. It survives structure and
+master-key serialization. Failed registration does not consume an ID, and
+exhaustion fails closed. Restoring an older snapshot or independently editing
+concurrent copies still requires external coordination or a new master-key domain.
+
+V2 uses wire tag 2 and rejects legacy V1 and development snapshots without
+allocation history, including their AccessStructure, MSK, and MPK objects.
+Live attributes cannot reconstruct retired IDs, so no automatic upgrader is supplied.
+User-key and ciphertext wire formats are unchanged, but loading old user keys
+does not narrow their producer-defined authority. Existing IDs must not be
+rebound to different permission meanings.
+
+The unified runner includes the lifecycle regressions in its complete default
+test suite. They cover Classic/Hybridized replacement cases, save/load, both
+refresh modes, invalid allocation state, and exhaustion. To run them with the
+other default tests independently:
+
+```bash
+cargo test --offline --locked
+```
+
+The canonical `unit-validation.log` and `unit-validation-metadata.json` record
+the results and tested source revision, alongside every other paper experiment.
+
 ## What the runner does
 
 `benches/run_evaluation.sh` performs the complete experiment:
@@ -205,8 +233,10 @@ source-policy oracle, or if the corpus does not have the expected structure:
 ## Canonical paper snapshot
 
 The checked-in paper snapshot compares baseline commit
-`089a548d4373dd099a57bb1c5219ad0a4cf25fe4` with clean LP source commit
-`2b804d58199e016a8dd07ffced0d0add55421eb7`. The generated files may be stored
+`089a548d4373dd099a57bb1c5219ad0a4cf25fe4` with the clean LP source commit
+recorded as `lp_git_head` in
+[`evaluation-artifact-manifest.json`](benchmark-results/evaluation-artifact-manifest.json).
+The generated files may be stored
 in a later results-only commit; the tested source revision is the one embedded
 in the summaries and manifests. The unified manifest must report
 `all_result_classes_same_clean_revision: true`.

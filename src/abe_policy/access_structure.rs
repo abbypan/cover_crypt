@@ -16,6 +16,10 @@ use super::{
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct AccessStructure {
     version: Version,
+    // This watermark survives deletion and serialization. Never reconstruct it
+    // from live attributes: an issued key may still contain a retired ID.
+    // Rollback or concurrent forks of a structure require external coordination.
+    next_attribute_id: usize,
     // Use a hash-map to efficiently find dimensions by name.
     dimensions: HashMap<String, Dimension>,
 }
@@ -24,6 +28,7 @@ impl AccessStructure {
     pub fn new() -> Self {
         Self {
             version: Version::V2,
+            next_attribute_id: 0,
             dimensions: HashMap::new(),
         }
     }
@@ -38,20 +43,20 @@ impl AccessStructure {
         self.generate_associated_rights(ap)
     }
 
-    fn next_attribute_id(&self) -> Result<usize, Error> {
-        self.dimensions
-            .values()
-            .filter_map(Dimension::next_attribute_id)
-            .max()
-            .map_or(Ok(0), |id| {
-                id.checked_add(1).ok_or_else(|| {
-                    Error::OperationNotPermitted("attribute identifier space exhausted".to_string())
-                })
+    fn available_attribute_id(&self) -> Result<usize, Error> {
+        // Reserve space for the next watermark before mutating the structure.
+        // Successful registration commits the increment; failures consume no ID.
+        self.next_attribute_id
+            .checked_add(1)
+            .map(|_| self.next_attribute_id)
+            .ok_or_else(|| {
+                Error::OperationNotPermitted("attribute identifier space exhausted".to_string())
             })
     }
 
     fn validate_serialized_invariants(&self) -> Result<(), Error> {
-        let mut attribute_ids = HashSet::new();
+        let mut attribute_ids =
+            HashSet::with_capacity(self.dimensions.values().map(Dimension::nb_attributes).sum());
         for (name, dimension) in &self.dimensions {
             validate_ordinary_name(name)
                 .map_err(|error| Error::ConversionFailed(error.to_string()))?;
@@ -59,6 +64,13 @@ impl AccessStructure {
                 Error::ConversionFailed(format!("invalid dimension '{name}': {error}"))
             })?;
             for attribute in dimension.attributes() {
+                if attribute.get_id() >= self.next_attribute_id {
+                    return Err(Error::ConversionFailed(format!(
+                        "attribute identifier {} is not below the allocation watermark {}",
+                        attribute.get_id(),
+                        self.next_attribute_id
+                    )));
+                }
                 if !attribute_ids.insert(attribute.get_id()) {
                     return Err(Error::ConversionFailed(format!(
                         "duplicate attribute identifier {}",
@@ -72,18 +84,19 @@ impl AccessStructure {
 
     /// Add an anarchic dimension with the given name to the access structure.
     ///
-    /// Requires USK refresh
+    /// Requires source-policy regeneration for new rights
     /// ====================
     ///
-    /// Only refreshed keys can decrypt for an access policy belonging to the
-    /// semantic space of the new dimension.
+    /// New rights require newly generated user keys with an explicit grant in
+    /// the new dimension. Refresh does not add previously absent right IDs.
     pub fn add_anarchy(&mut self, dimension: String) -> Result<(), Error> {
         validate_ordinary_name(&dimension)?;
-        let maximum_id = self.next_attribute_id()?;
+        let maximum_id = self.available_attribute_id()?;
         match self.dimensions.entry(dimension) {
             Entry::Occupied(e) => Err(Error::ExistingDimension(e.key().to_string())),
             Entry::Vacant(e) => {
                 e.insert(Dimension::anarchy_with_maximum(maximum_id));
+                self.next_attribute_id = maximum_id + 1;
                 Ok(())
             }
         }
@@ -91,18 +104,19 @@ impl AccessStructure {
 
     /// Add a hierarchic dimension with the given name to the access structure.
     ///
-    /// Requires USK refresh
+    /// Requires source-policy regeneration for new rights
     /// ====================
     ///
-    /// Only refreshed keys can decrypt for an access policy belonging to the
-    /// semantic space of the new dimension.
+    /// New rights require newly generated user keys with an explicit grant in
+    /// the new dimension. Refresh does not add previously absent right IDs.
     pub fn add_hierarchy(&mut self, dimension: String) -> Result<(), Error> {
         validate_ordinary_name(&dimension)?;
-        let maximum_id = self.next_attribute_id()?;
+        let maximum_id = self.available_attribute_id()?;
         match self.dimensions.entry(dimension) {
             Entry::Occupied(e) => Err(Error::ExistingDimension(e.key().to_string())),
             Entry::Vacant(e) => {
                 e.insert(Dimension::hierarchy_with_maximum(maximum_id));
+                self.next_attribute_id = maximum_id + 1;
                 Ok(())
             }
         }
@@ -134,24 +148,25 @@ impl AccessStructure {
     /// returned. Specifying `after` when adding a new attribute to an anarchy
     /// has no effect.
     ///
-    /// Requires USK refresh
-    /// ====================
+    /// Requires source-policy regeneration for new rights
+    /// =================================================
     ///
-    /// Only refreshed keys will be able to decrypt for an associated access
-    /// policy belonging to the semantic space of the new attribute.
+    /// Even an existing maximum or hierarchical grant needs key regeneration
+    /// to acquire the new attribute's rights. Refresh cannot add new right IDs.
     pub fn add_attribute(
         &mut self,
         attribute: QualifiedAttribute,
         encryption_hint: EncryptionHint,
         after: Option<&str>,
     ) -> Result<(), Error> {
-        let id = self.next_attribute_id()?;
+        let id = self.available_attribute_id()?;
 
         self.dimensions
             .get_mut(&attribute.dimension)
             .ok_or_else(|| Error::DimensionNotFound(attribute.dimension.clone()))?
             .add_attribute(attribute.name, encryption_hint, after, id)?;
 
+        self.next_attribute_id = id + 1;
         Ok(())
     }
 
@@ -461,10 +476,7 @@ fn combine(
 
 impl Default for AccessStructure {
     fn default() -> Self {
-        Self {
-            version: Version::V2,
-            dimensions: HashMap::new(),
-        }
+        Self::new()
     }
 }
 
@@ -479,7 +491,8 @@ mod serialization {
         type Error = Error;
 
         fn length(&self) -> usize {
-            1 + to_leb128_len(self.dimensions.len())
+            1 + to_leb128_len(self.next_attribute_id)
+                + to_leb128_len(self.dimensions.len())
                 + self
                     .dimensions
                     .iter()
@@ -492,6 +505,7 @@ mod serialization {
 
         fn write(&self, ser: &mut Serializer) -> Result<usize, Self::Error> {
             let mut n = ser.write_leb128_u64(self.version as u64)?;
+            n += ser.write_leb128_u64(u64::try_from(self.next_attribute_id)?)?;
             n += ser.write_leb128_u64(self.dimensions.len() as u64)?;
             self.dimensions.iter().try_for_each(|(name, dimension)| {
                 n += ser.write_vec(name.as_bytes())?;
@@ -503,22 +517,23 @@ mod serialization {
 
         fn read(de: &mut Deserializer) -> Result<Self, Self::Error> {
             let version = de.read_leb128_u64()?;
-            let dimensions = if version == Version::V2 as u64 {
-                (0..de.read_leb128_u64()?)
-                    .map(|_| {
-                        let name = String::from_utf8(de.read_vec()?)
-                            .map_err(|e| Error::ConversionFailed(e.to_string()))?;
-                        let dimension = de.read::<Dimension>()?;
-                        Ok((name, dimension))
-                    })
-                    .collect::<Result<HashMap<_, _>, Error>>()
-            } else {
-                Err(Error::ConversionFailed(format!(
-                    "unsupported access-structure version {version}; legacy V1 structures require explicit LP migration"
-                )))
-            }?;
+            if version != Version::V2 as u64 {
+                return Err(Error::ConversionFailed(format!(
+                    "unsupported access-structure format tag {version}; LP V2 requires protected maxima and a trusted allocation watermark"
+                )));
+            }
+            let next_attribute_id = usize::try_from(de.read_leb128_u64()?)?;
+            let dimensions = (0..de.read_leb128_u64()?)
+                .map(|_| {
+                    let name = String::from_utf8(de.read_vec()?)
+                        .map_err(|e| Error::ConversionFailed(e.to_string()))?;
+                    let dimension = de.read::<Dimension>()?;
+                    Ok((name, dimension))
+                })
+                .collect::<Result<HashMap<_, _>, Error>>()?;
             let structure = Self {
                 version: Version::V2,
+                next_attribute_id,
                 dimensions,
             };
             structure.validate_serialized_invariants()?;
@@ -545,8 +560,114 @@ mod serialization {
         gen_structure(&mut structure, false).unwrap();
         let mut bytes = structure.serialize().unwrap();
         assert_eq!(bytes[0], Version::V2 as u8);
-        bytes[0] = 0;
-        assert!(AccessStructure::deserialize(&bytes).is_err());
+        for unsupported_tag in [0, 1] {
+            bytes[0] = unsupported_tag;
+            assert!(AccessStructure::deserialize(&bytes).is_err());
+        }
+    }
+
+    #[test]
+    fn test_retired_ids_survive_serialization() -> Result<(), Error> {
+        for ordered in [false, true] {
+            let mut structure = AccessStructure::new();
+            if ordered {
+                structure.add_hierarchy("D".to_string())?;
+            } else {
+                structure.add_anarchy("D".to_string())?;
+            }
+            let old = QualifiedAttribute::new("D", "OLD");
+            structure.add_attribute(old.clone(), EncryptionHint::Classic, None)?;
+            let old_id = structure.get_attribute(&old)?.get_id();
+            structure.del_attribute(&old)?;
+            let mut restored = AccessStructure::deserialize(&structure.serialize()?)?;
+            let new = QualifiedAttribute::new("D", "NEW");
+            restored.add_attribute(new.clone(), EncryptionHint::Classic, None)?;
+            assert!(restored.get_attribute(&new)?.get_id() > old_id);
+
+            let watermark = restored.next_attribute_id;
+            restored.del_dimension("D")?;
+            let mut empty = AccessStructure::deserialize(&restored.serialize()?)?;
+            assert!(empty.dimensions.is_empty());
+            assert_eq!(empty.next_attribute_id, watermark);
+            empty.add_anarchy("OTHER".to_string())?;
+            assert_eq!(
+                empty
+                    .get_attribute(&QualifiedAttribute::new("OTHER", MAX_ATTRIBUTE_NAME))?
+                    .get_id(),
+                watermark
+            );
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn test_invalid_allocation_watermark_is_rejected() -> Result<(), Error> {
+        let mut structure = AccessStructure::new();
+        structure.add_anarchy("D".to_string())?;
+        structure.add_attribute(
+            QualifiedAttribute::new("D", "A"),
+            EncryptionHint::Classic,
+            None,
+        )?;
+        for invalid_watermark in [0, 1] {
+            let mut invalid = structure.clone();
+            invalid.next_attribute_id = invalid_watermark;
+            assert!(AccessStructure::deserialize(&invalid.serialize()?).is_err());
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn test_identifier_exhaustion_is_atomic() -> Result<(), Error> {
+        let mut structure = AccessStructure::new();
+        structure.add_anarchy("D".to_string())?;
+        structure.next_attribute_id = usize::MAX - 1;
+        structure.add_attribute(
+            QualifiedAttribute::new("D", "LAST"),
+            EncryptionHint::Classic,
+            None,
+        )?;
+        let mut exhausted = AccessStructure::deserialize(&structure.serialize()?)?;
+        let before = exhausted.clone();
+        assert!(exhausted.add_anarchy("A".to_string()).is_err());
+        assert!(exhausted.add_hierarchy("H".to_string()).is_err());
+        assert!(exhausted
+            .add_attribute(
+                QualifiedAttribute::new("D", "NEW"),
+                EncryptionHint::Classic,
+                None
+            )
+            .is_err());
+        assert_eq!(exhausted, before);
+        exhausted.del_dimension("D")?;
+        assert!(exhausted.add_anarchy("REPLACEMENT".to_string()).is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn test_failed_registration_does_not_consume_identifiers() -> Result<(), Error> {
+        let mut structure = AccessStructure::new();
+        structure.add_hierarchy("D".to_string())?;
+        let existing = QualifiedAttribute::new("D", "A");
+        structure.add_attribute(existing.clone(), EncryptionHint::Classic, None)?;
+        let before = structure.clone();
+        assert!(structure.add_hierarchy("D".to_string()).is_err());
+        assert!(structure.add_anarchy("D".to_string()).is_err());
+        assert!(structure.add_anarchy("BAD::NAME".to_string()).is_err());
+        assert!(structure
+            .add_attribute(existing, EncryptionHint::Classic, None)
+            .is_err());
+        for (attribute, after) in [
+            (QualifiedAttribute::new("UNKNOWN", "A"), None),
+            (QualifiedAttribute::new("D", MAX_ATTRIBUTE_NAME), None),
+            (QualifiedAttribute::new("D", "NEW"), Some("UNKNOWN")),
+        ] {
+            assert!(structure
+                .add_attribute(attribute, EncryptionHint::Classic, after)
+                .is_err());
+        }
+        assert_eq!(structure, before);
+        Ok(())
     }
 }
 

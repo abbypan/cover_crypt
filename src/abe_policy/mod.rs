@@ -17,6 +17,7 @@ pub use tests::gen_structure;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Version {
-    /// Access structures with a protected maximum in every dimension.
-    V2 = 1,
+    /// Protected maxima and a persistent, monotone attribute-ID allocator.
+    /// Wire tag 1 is reserved for development snapshots without allocation history.
+    V2 = 2,
 }

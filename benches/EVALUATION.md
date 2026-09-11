@@ -1,5 +1,10 @@
 # Paper evaluation benchmark
 
+LP-Covercrypt uses access-structure format V2, including persistent identifier
+allocation history. The complete default test suite covers deletion/replacement,
+save/load, and refresh. These lifecycle checks and every benchmark share the
+clean source revision recorded in the unified manifest.
+
 The canonical artifact must be generated from one clean LP source commit:
 
 ```sh

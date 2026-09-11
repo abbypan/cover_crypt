@@ -147,14 +147,6 @@ impl Dimension {
         Ok(())
     }
 
-    pub(crate) fn next_attribute_id(&self) -> Option<usize> {
-        if self.nb_attributes() == 0 {
-            None
-        } else {
-            self.attributes().map(Attribute::get_id).max()
-        }
-    }
-
     /// Restricts the dimension to the attribute that are lower than the given one.
     pub fn restrict(&self, attr_name: Name) -> Result<Self, Error> {
         let params = self
